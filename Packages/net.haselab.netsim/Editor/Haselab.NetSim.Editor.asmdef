@@ -1,0 +1,22 @@
+{
+    "name": "Haselab.NetSim.Editor",
+    "rootNamespace": "NetSim",
+    "references": [
+        "VRC.SDKBase",
+        "VRC.SDK3",
+        "VRC.Udon",
+        "VRC.ClientSim",
+        "VRC.ClientSim.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
