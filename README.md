@@ -18,7 +18,16 @@ and packet loss — so you can reproduce and debug sync problems without uploadi
 - Latency / jitter (reordering) / drop rate settings
 - Unattended suite runner that survives Play Mode transitions and domain reloads
 
-## Quick start
+## Try it with the sample world
+
+1. Install the package (below) and import **Sample World** from its Package Manager page.
+2. Open `SampleWorld.unity` from the imported sample and enter Play Mode (ClientSim).
+3. Run `Haselab.NetSim.NetSimScenarioRunner.RunWhenReady("sample-world");`
+4. Read the report in `Logs/NetSim/`. The world contains correct sync patterns and planted bugs (a write without
+   ownership, a "take ownership, then write" race, state that only lives in a network event); the report ends with a
+   checklist showing that NetSim finds exactly the bugs. See the [sample's README](Packages/net.haselab.netsim/Samples~/SampleWorld/README.md).
+
+## Quick start (your own world)
 
 1. Install the package (below) and import **Example Scenarios** from its Package Manager page.
 2. Open your world scene and enter Play Mode (ClientSim).
@@ -62,7 +71,8 @@ A VPM listing will be provided after the first release.
 Packages/net.haselab.netsim/
   package.json
   Editor/                 NetSim core and suite runner (Editor-only asmdef)
-  Samples~/ExampleScenarios/  Example scenarios / test bots (importable from Package Manager)
+  Samples~/SampleWorld/       Sample world with planted sync bugs and its scenario (importable from Package Manager)
+  Samples~/ExampleScenarios/  World-agnostic example scenarios / random test bot (importable from Package Manager)
   Documentation~/         Manual: how it works, writing scenarios, limitations
   CHANGELOG.md
 ```

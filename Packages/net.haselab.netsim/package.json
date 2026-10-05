@@ -12,11 +12,24 @@
   "licensesUrl": "https://github.com/haselab-net/vrchat-netsim/blob/main/LICENSE",
   "documentationUrl": "https://github.com/haselab-net/vrchat-netsim",
   "changelogUrl": "https://github.com/haselab-net/vrchat-netsim/blob/main/Packages/net.haselab.netsim/CHANGELOG.md",
-  "keywords": ["vrchat", "udon", "udonsharp", "clientsim", "network", "sync", "testing"],
+  "keywords": [
+    "vrchat",
+    "udon",
+    "udonsharp",
+    "clientsim",
+    "network",
+    "sync",
+    "testing"
+  ],
   "vpmDependencies": {
     "com.vrchat.worlds": ">=3.10.0"
   },
   "samples": [
+    {
+      "displayName": "Sample World",
+      "description": "A small world with correct sync patterns, planted sync bugs and a scenario that checks NetSim finds them.",
+      "path": "Samples~/SampleWorld"
+    },
     {
       "displayName": "Example Scenarios",
       "description": "Example scenarios and test bots for NetSim.",

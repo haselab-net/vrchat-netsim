@@ -8,3 +8,4 @@
 - Scenario framework (`[NetSimScenario]`, `NetSimScenarioContext`) with consistency / late-join reports and stall detection.
 - Unattended suite runner (`NetSimSuite`).
 - Example scenarios with a world-agnostic random bot.
+- Sample world with correct sync patterns, planted sync bugs and a self-checking scenario (`sample-world`).

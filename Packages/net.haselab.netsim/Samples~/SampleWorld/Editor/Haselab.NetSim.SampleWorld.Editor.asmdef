@@ -1,0 +1,20 @@
+{
+    "name": "Haselab.NetSim.SampleWorld.Editor",
+    "rootNamespace": "Haselab.NetSim.SampleWorld",
+    "references": [
+        "Haselab.NetSim.Editor",
+        "VRC.SDKBase",
+        "VRC.Udon"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
