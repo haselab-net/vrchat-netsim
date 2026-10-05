@@ -7,6 +7,9 @@ It runs several simulated clients side by side inside Unity Editor (ClientSim) a
 Udon networking between them through a simulated server with configurable latency, jitter
 and packet loss — so you can reproduce and debug sync problems without uploading the world.
 
+You only start **one** Unity Editor: every simulated client is a copy of the world scene inside the same play session,
+so no extra Editor instances or VRChat clients are needed. See [how it works](Packages/net.haselab.netsim/Documentation~/README.md#how-it-works).
+
 > Status: early preview (0.1.0). APIs may change.
 
 ## Features

@@ -11,6 +11,19 @@ multi-client test in the real VRChat client ("Build & Test" with several clients
 
 ## How it works
 
+### One Editor, many clients
+
+You start **one** Unity Editor, even for 3 or 4 clients. No extra Editor instances, project clones or VRChat clients
+are needed. All simulated clients live in the same play session:
+
+- Their state can be read and compared directly, so scenarios detect differences automatically and write them to a report.
+- Time can run faster than real time (`timeScale`; the sample world's ~90 s scenario takes about 20 s).
+- A fixed `seed` reuses the same random choices for latency, loss and bot actions, which makes problems much easier
+  to reproduce (frame timing still varies a little between runs).
+
+The cost is that every client's physics, animation and audio also run in that Editor (see Limitations), and the
+networking is a simplified model, so confirm important results with several real VRChat clients ("Build & Test").
+
 ### Clients
 
 - The world scene is loaded additively once per remote client. Each copy lives in its own physics scene, so
