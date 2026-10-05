@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.1.0] - Unreleased
+## [0.1.0] - 2026-10-05
 
 - Multi-client simulator: additive scene copies per client, per-client Networking answers, simulated server with
   latency / jitter / loss for network events, synced variables, ownership, late join and master leave.
@@ -9,3 +9,4 @@
 - Unattended suite runner (`NetSimSuite`).
 - Example scenarios with a world-agnostic random bot.
 - Sample world with correct sync patterns, planted sync bugs and a self-checking scenario (`sample-world`).
+- Japanese documentation.

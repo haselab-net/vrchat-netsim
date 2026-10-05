@@ -63,9 +63,18 @@ NetSim lives in an Editor-only assembly and is never included in world builds.
 https://github.com/haselab-net/vrchat-netsim.git?path=Packages/net.haselab.netsim
 ```
 
-### VRChat Creator Companion
+Append `#v0.1.0` (a release tag) to the URL to pin a version.
 
-A VPM listing will be provided after the first release.
+### VRChat Creator Companion (VPM)
+
+1. Add the listing: open [this link](https://haselab-net.github.io/vrchat-netsim/) and click **Add to VRChat Creator Companion**,
+   or in VCC go to `Settings > Packages > Add Repository` and enter
+
+   ```
+   https://haselab-net.github.io/vrchat-netsim/index.json
+   ```
+
+2. In your world project's **Manage Project**, add **NetSim - Multi-client Network Simulator for VRChat Worlds**.
 
 ## Repository layout
 
@@ -77,6 +86,8 @@ Packages/net.haselab.netsim/
   Samples~/ExampleScenarios/  World-agnostic example scenarios / random test bot (importable from Package Manager)
   Documentation~/         Manual: how it works, writing scenarios, limitations
   CHANGELOG.md
+.github/workflows/release.yml  Tag v<version> -> GitHub release (zip) + VPM listing on GitHub Pages
+tools/build_listing.py         Builds the VPM listing from the releases
 ```
 
 ## Development

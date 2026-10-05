@@ -63,9 +63,18 @@ NetSim は Editor 専用のアセンブリに入っており、ワールドの�
 https://github.com/haselab-net/vrchat-netsim.git?path=Packages/net.haselab.netsim
 ```
 
-### VRChat Creator Companion
+URL の末尾にリリースのタグ（`#v0.1.0` など）を付けると、バージョンを固定できます。
 
-VPM リスティングは最初のリリース後に用意する予定です。
+### VRChat Creator Companion（VPM）
+
+1. リスティングを追加します。[このページ](https://haselab-net.github.io/vrchat-netsim/)を開いて **Add to VRChat Creator Companion**
+   を押すか、VCC の `Settings > Packages > Add Repository` に次の URL を入力します。
+
+   ```
+   https://haselab-net.github.io/vrchat-netsim/index.json
+   ```
+
+2. ワールドプロジェクトの **Manage Project** で **NetSim - Multi-client Network Simulator for VRChat Worlds** を追加します。
 
 ## リポジトリ構成
 
@@ -77,6 +86,8 @@ Packages/net.haselab.netsim/
   Samples~/ExampleScenarios/  ワールドに依存しない例のシナリオ / ランダムなテストボット（Package Manager からインポート）
   Documentation~/             マニュアル: 仕組み、シナリオの書き方、限界
   CHANGELOG.md
+.github/workflows/release.yml  タグ v<version> -> GitHub リリース（zip）と GitHub Pages の VPM リスティング
+tools/build_listing.py         リリースから VPM リスティングを作る
 ```
 
 ## 開発について
