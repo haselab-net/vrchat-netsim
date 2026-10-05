@@ -20,7 +20,7 @@ so no extra Editor instances or VRChat clients are needed. See [how it works](Pa
 - Ownership (`SetOwner` / `GetOwner` / `IsOwner` / `OnOwnershipTransferred`) and master migration
 - Late join and master leave
 - Minimal `VRCObjectSync` emulation and pickup → walk → drop carrying by test bots
-- Latency / jitter (reordering) / drop rate settings
+- Configurable latency / jitter (reordering) / loss per message type ([`NetSimConfig`](Packages/net.haselab.netsim/Documentation~/README.md#network-conditions-latency-jitter-loss))
 - Unattended suite runner that survives Play Mode transitions and domain reloads
 
 ## Try it with the sample world

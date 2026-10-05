@@ -45,8 +45,36 @@ networking is a simplified model, so confirm important results with several real
 | Late join | The new client receives the server's latest state of every behaviour. Messages that arrive before its scene is ready are held back |
 | Object positions (minimal `VRCObjectSync`) | The owner's position / rotation is sent at a fixed interval and interpolated on the other clients |
 
-Latency is one-way and chosen uniformly between `latencyMin` and `latencyMax` for each message, so messages of
-different kinds can overtake each other.
+### Network conditions (latency, jitter, loss)
+
+The simulated network is configured with `NetSimConfig`, passed when a scenario starts:
+
+```csharp
+Haselab.NetSim.NetSimScenarioRunner.RunWhenReady("sample-world", new Haselab.NetSim.NetSimConfig {
+    latencyMin = 0.1f, latencyMax = 0.4f,      // one-way delay per hop, seconds; the spread is the jitter
+    eventDropRate = 0.05f,                     // 5% of network-event deliveries are lost
+    serializationDropRate = 0.05f,             // 5% of synced-variable deliveries are lost
+    objectSyncDropRate = 0.05f,                // 5% of object position updates are lost
+    seed = 2,
+});
+```
+
+| Field | Default | Meaning |
+|---|---|---|
+| `latencyMin` / `latencyMax` | 0.05 / 0.15 s | One-way delay of each hop (client -> server, server -> client), chosen uniformly per message. A message between two clients takes two hops. The range is the jitter: messages of different kinds can overtake each other (network events between the same sender and receiver stay in order) |
+| `eventDropRate` | 0 | Probability that a `SendCustomNetworkEvent` delivery to one receiver is lost |
+| `serializationDropRate` | 0 | Probability that a synced-variable delivery (Manual / Continuous) to one receiver is lost |
+| `objectSyncDropRate` | 0 | Probability that an object position update to one receiver is lost |
+| `continuousInterval` | 0.2 s | Send interval of Continuous sync and object sync |
+| `lateJoinStateDelay` | 0.3 s | Delay before a late joiner receives the state snapshot |
+| `seed` | 1 | Random seed for latency, loss and the bots' random numbers |
+| `trace` | "" | Comma-separated path substrings; network traffic of matching objects is logged |
+| `carry` | true | Bots carry objects (pick up -> walk -> drop); `false` moves them instantly |
+
+Losses are decided per receiver, so one client can miss a message that the others get. Times are simulated time:
+with `timeScale: 4` the Editor runs four times faster, but a latency of 0.2 s is still 0.2 s for the world's scripts.
+In a suite (`NetSimSuite`) the same values are given in each step string (see Running). Each report starts with the
+configuration it ran with, and its totals count dropped messages (`ev.dropped`, `ser.dropped`, `objsync.dropped`).
 
 ### Editor behaviour that NetSim changes while it runs
 

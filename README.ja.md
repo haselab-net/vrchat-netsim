@@ -19,7 +19,7 @@ Editor や VRChat クライアントを複数起動する必要はありませ�
 - 所有権（`SetOwner` / `GetOwner` / `IsOwner` / `OnOwnershipTransferred`）とマスターの移譲
 - 途中参加とマスター退出
 - `VRCObjectSync` の簡易エミュレーションと、テストボットによる持ち運び（拾う → 歩く → 置く）
-- 遅延 / ゆらぎ（順序の入れ替わり）/ 欠落率の設定
+- メッセージの種類ごとに遅延 / ゆらぎ（順序の入れ替わり）/ 欠落率を設定可能（[`NetSimConfig`](Packages/net.haselab.netsim/Documentation~/README.ja.md#ネットワークの条件遅延ゆらぎ欠落)）
 - Play モードの出入りやドメインリロードをまたいで無人で一括実行できるスイート
 
 ## サンプルワールドで試す
