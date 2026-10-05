@@ -73,6 +73,9 @@ namespace Haselab.NetSim
         static readonly Dictionary<(int, string), long> appliedSeq = new Dictionary<(int, string), long>(); // (client, key) -> last applied
         static long serverSeqCounter;
         public static readonly Dictionary<string, int> Stats = new Dictionary<string, int>();
+        /// <summary>Networking.SetOwner calls per object path (to find objects whose ownership is requested in a loop).</summary>
+        public static readonly Dictionary<string, int> SetOwnerCalls = new Dictionary<string, int>();
+        public static string SetOwnerHotSpots(int n = 5) => string.Join(", ", SetOwnerCalls.OrderByDescending(k => k.Value).Take(n).Select(k => $"{k.Key}={k.Value}"));
         public static readonly List<string> Log = new List<string>();
 
         static System.Random rng;
@@ -109,7 +112,7 @@ namespace Haselab.NetSim
             rng = new System.Random(Config.seed);
             TraceSubstrings.Clear(); if (!string.IsNullOrEmpty(Config.trace)) TraceSubstrings.AddRange(Config.trace.Split(','));
             carries.Clear(); remoteTargets.Clear();
-            Clients.Clear(); ServerSeq.Clear(); appliedSeq.Clear(); pathCache.Clear(); lastObjSync.Clear(); objSyncCache.Clear(); lastEventArrival.Clear(); ServerOwner.Clear(); ServerState.Clear(); Stats.Clear(); Log.Clear(); queue.Clear(); ctxStack.Clear();
+            Clients.Clear(); ServerSeq.Clear(); appliedSeq.Clear(); pathCache.Clear(); lastObjSync.Clear(); objSyncCache.Clear(); lastEventArrival.Clear(); ServerOwner.Clear(); ServerState.Clear(); Stats.Clear(); SetOwnerCalls.Clear(); Log.Clear(); queue.Clear(); ctxStack.Clear();
             scenePath = SceneManager.GetActiveScene().path;
 
             var c0 = new NetSimClient { index = 0, player = Networking.LocalPlayer, scene = SceneManager.GetActiveScene(), isOriginal = true };
@@ -450,7 +453,7 @@ namespace Haselab.NetSim
             c.ownerView[path] = p.playerId;   // requester assumes ownership immediately
             Trace(path, $"{c} SetOwner {path} -> p{p.playerId} (prev p{prev})");
             if (prev != p.playerId) FireOwnershipTransferred(c, path, p);
-            Count("setOwner");
+            Count("setOwner"); SetOwnerCalls.TryGetValue(path, out var n); SetOwnerCalls[path] = n + 1;
             // request to the server
             var from = c;
             Schedule(Lat(), () => {

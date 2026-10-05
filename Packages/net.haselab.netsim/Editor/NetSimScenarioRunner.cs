@@ -150,6 +150,7 @@ namespace Haselab.NetSim
             R($"- real time: {Time.realtimeSinceStartup - t0:F0} s, sim time: {Time.time:F0} s");
             if (logCounts.Count > 0) R($"- log counts: {string.Join(", ", logCounts.OrderBy(k => k.Key).Select(k => k.Key + "=" + k.Value))}");
             R($"- net stats: {NetSim.StatsString()}");
+            R($"- SetOwner hot spots: {NetSim.SetOwnerHotSpots()}");
             var halted = NetSim.HaltedBehaviours();
             R($"- halted UdonBehaviours: {halted.Count}"); foreach (var h in halted.Take(20)) R($"  - {h}");
             Application.logMessageReceived -= OnLog;

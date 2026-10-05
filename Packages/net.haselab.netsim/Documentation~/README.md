@@ -91,6 +91,7 @@ Useful members:
 | `NetSim.DiffSynced(a, b)` / `ctx.ReportConsistency(title)` | Synced-variable differences |
 | `NetSim.DiffVisual(a, b, root)` / `ctx.LateJoinOnlyDifferences(early, late, root)` | Active / collider / renderer / text / interactable differences |
 | `NetSim.HaltedBehaviours()` | Behaviours halted by an Udon exception |
+| `NetSim.SetOwnerCalls` / `NetSim.SetOwnerHotSpots()` | `SetOwner` calls per object (also in the report), to spot ownership requested in a loop |
 | `NetSim.TraceSubstrings` or `NetSimConfig.trace` | Log the network traffic of matching object paths |
 | `NetSimScenarioRunner.CountedLogPrefixes` | Count log lines (e.g. game events) in the report |
 | `NetSimScenarioRunner.WorldReady` | Replace the "world finished initializing" check |
