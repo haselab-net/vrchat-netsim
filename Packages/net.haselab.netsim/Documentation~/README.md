@@ -1,5 +1,7 @@
 # NetSim manual
 
+English | [日本語](README.ja.md)
+
 NetSim runs several VRChat clients inside one Unity Editor play session (ClientSim) and routes Udon networking
 between them through a simulated server with latency, jitter and loss. Scenarios (C# coroutines) add clients,
 drive the world with bots and report differences between clients.
@@ -139,6 +141,14 @@ Haselab.NetSim.NetSimSuite.Start(new[] {
 - **halted UdonBehaviours**: an Udon exception halted the behaviour on that client; the first errors are listed
   at the top of the report.
 - **STALL**: the progress signature did not change for `StallSeconds`; the game may be stuck.
+
+### Values that diverge under simultaneous interaction
+
+The common "take ownership, then write" pattern (`Networking.SetOwner`, then change a synced variable and call
+`RequestSerialization`) works while one player acts at a time. When two players act at nearly the same time, both take
+ownership and write, and only one write survives; the other player keeps showing its own value until the next change.
+NetSim reports this as **synced vars ... differences**. Avoid it by letting non-owners ask the owner with a network event
+and having only the owner write. Compare `RacyCounter` and `GoodCounter` in the sample world.
 
 ## Limitations
 

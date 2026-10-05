@@ -1,5 +1,7 @@
 # Example scenarios
 
+English | [日本語](README.ja.md)
+
 World-agnostic scenarios driven by a random "monkey" bot that clicks visible UI buttons and interacts with
 enabled interactables on every client.
 

@@ -1,5 +1,7 @@
 # Sample world
 
+English | [日本語](README.ja.md)
+
 A small world with correct sync patterns, planted sync bugs and a scenario that checks NetSim finds exactly the bugs.
 
 | Object | Pattern | Expected NetSim result |

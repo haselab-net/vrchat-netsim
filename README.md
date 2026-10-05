@@ -1,5 +1,7 @@
 # vrchat-netsim
 
+English | [日本語](README.ja.md)
+
 **NetSim** is an Editor-only multi-client network simulator for VRChat world development.
 It runs several simulated clients side by side inside Unity Editor (ClientSim) and routes
 Udon networking between them through a simulated server with configurable latency, jitter
