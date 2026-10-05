@@ -1,14 +1,11 @@
 {
-    "name": "Haselab.NetSim.Editor",
-    "rootNamespace": "Haselab.NetSim",
+    "name": "Haselab.NetSim.Samples.Editor",
+    "rootNamespace": "Haselab.NetSim.Samples",
     "references": [
+        "Haselab.NetSim.Editor",
         "VRC.SDKBase",
-        "VRC.SDK3",
         "VRC.Udon",
-        "VRC.ClientSim",
-        "VRC.ClientSim.Editor",
-        "UdonSharp.Runtime",
-        "UdonSharp.Editor"
+        "UnityEngine.UI"
     ],
     "includePlatforms": [
         "Editor"
