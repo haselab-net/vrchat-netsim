@@ -51,6 +51,10 @@ Packages/net.haselab.netsim/
   CHANGELOG.md
 ```
 
+## Development
+
+This project was developed with [Claude Code](https://claude.com/claude-code); much of the code and documentation was written by Claude (Anthropic) under human direction and review.
+
 ## License
 
 [MIT](LICENSE)
