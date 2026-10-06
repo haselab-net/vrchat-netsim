@@ -22,6 +22,8 @@ so no extra Editor instances or VRChat clients are needed. See [how it works](Pa
 - Minimal `VRCObjectSync` emulation and pickup → walk → drop carrying by test bots
 - Configurable latency / jitter (reordering) / loss per message type ([`NetSimConfig`](Packages/net.haselab.netsim/Documentation~/README.md#network-conditions-latency-jitter-loss))
 - Unattended suite runner that survives Play Mode transitions and domain reloads
+- **Real VRChat client test**: run a debug bot in several real VRChat clients (SDK Build & Test) and compare their logs
+  ([manual](Packages/net.haselab.netsim/Documentation~/README.md#testing-in-the-real-vrchat-client))
 
 ## Try it with the sample world
 
@@ -85,6 +87,8 @@ Append `#v0.1.0` (a release tag) to the URL to pin a version.
 Packages/net.haselab.netsim/
   package.json
   Editor/                 NetSim core and suite runner (Editor-only asmdef)
+  Editor/RealClient/      Real VRChat client test (Build & Test with a bot)
+  Tools~/                 analyze_logs.py, vrc_clients.py (real client test)
   Samples~/SampleWorld/       Sample world with planted sync bugs and its scenario (importable from Package Manager)
   Samples~/ExampleScenarios/  World-agnostic example scenarios / random test bot (importable from Package Manager)
   Documentation~/         Manual: how it works, writing scenarios, limitations

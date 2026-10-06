@@ -21,6 +21,8 @@ Editor や VRChat クライアントを複数起動する必要はありませ�
 - `VRCObjectSync` の簡易エミュレーションと、テストボットによる持ち運び（拾う → 歩く → 置く）
 - メッセージの種類ごとに遅延 / ゆらぎ（順序の入れ替わり）/ 欠落率を設定可能（[`NetSimConfig`](Packages/net.haselab.netsim/Documentation~/README.ja.md#ネットワークの条件遅延ゆらぎ欠落)）
 - Play モードの出入りやドメインリロードをまたいで無人で一括実行できるスイート
+- **実機の VRChat でのテスト**: 複数の実機 VRChat クライアント（SDK の Build & Test）でデバッグ用ボットを動かし、ログを比べる
+  （[マニュアル](Packages/net.haselab.netsim/Documentation~/README.ja.md#実機の-vrchat-でのテスト)）
 
 ## サンプルワールドで試す
 
@@ -85,6 +87,8 @@ URL の末尾にリリースのタグ（`#v0.1.0` など）を付けると、バ
 Packages/net.haselab.netsim/
   package.json
   Editor/                     NetSim 本体とスイート実行（Editor 専用 asmdef）
+  Editor/RealClient/          実機の VRChat でのテスト（ボット付きの Build & Test）
+  Tools~/                     analyze_logs.py, vrc_clients.py（実機テスト用）
   Samples~/SampleWorld/       バグを仕込んだサンプルワールドとそのシナリオ（Package Manager からインポート）
   Samples~/ExampleScenarios/  ワールドに依存しない例のシナリオ / ランダムなテストボット（Package Manager からインポート）
   Documentation~/             マニュアル: 仕組み、シナリオの書き方、限界

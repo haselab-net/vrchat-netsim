@@ -31,3 +31,17 @@ The example scenarios (`example-consistency`, `example-latejoin`, `example-maste
 The scenario expects no message loss (the default configuration). With `eventDropRate > 0` the event-only toggle
 also differs between early clients, and lost requests make the good counter count fewer clicks, which is the
 intended behaviour of those patterns under loss.
+
+## Real VRChat client test
+
+`SampleWorldBot.prefab` is a bot for the same world in the real VRChat client (see the manual, "Testing in the real
+VRChat client"). Each client's bot clicks random stations and carries the ball for 2 minutes, then stops and keeps
+logging `state good=.. racy=.. lost=.. synced=.. eventLamp=.. goals=..`.
+
+1. Start Steam, log in to the VRChat SDK (VRChat SDK > Show Control Panel) and save `SampleWorld.unity`.
+2. *Tools > NetSim > Sample World > Build & Test with Bot (3 clients)*.
+3. Optionally, about a minute later, add a late joiner: `python vrc_clients.py launch 1` (in the package's `Tools~`).
+4. `python analyze_logs.py --since "<start time>" --watch --must-match good,synced,goals`
+
+`good`, `synced` and `goals` must be equal on every client (PASS). `racy` and `lost` may differ, and `eventLamp` differs
+for a late joiner: those are the planted bugs, now observed in real VRChat networking.

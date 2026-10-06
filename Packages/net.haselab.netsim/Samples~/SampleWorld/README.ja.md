@@ -32,3 +32,17 @@ Haselab.NetSim.NetSimScenarioRunner.RunWhenReady("sample-world");
 このシナリオは、メッセージの欠落がない状態（既定の設定）を前提にしています。`eventDropRate > 0` にすると、
 イベントだけのトグルは初めからいるクライアント同士でもずれ、依頼が失われた分だけ GoodCounter の数が少なくなります。
 これらは欠落があるときのそれぞれの書き方の、想定どおりの挙動です。
+
+## 実機の VRChat でのテスト
+
+`SampleWorldBot.prefab` は、同じワールドを実機の VRChat クライアントで試すためのボットです（マニュアルの「実機の VRChat での
+テスト」を参照）。各クライアントのボットが 2 分間、ランダムにステーションを押してボールを運び、そのあと操作をやめて
+`state good=.. racy=.. lost=.. synced=.. eventLamp=.. goals=..` を書き続けます。
+
+1. Steam を起動し、VRChat SDK にログインして（VRChat SDK > Show Control Panel）、`SampleWorld.unity` を保存します。
+2. *Tools > NetSim > Sample World > Build & Test with Bot (3 clients)* を実行します。
+3. 任意: 1 分ほどしてから途中参加者を追加します。`python vrc_clients.py launch 1`（パッケージの `Tools~` で実行）
+4. `python analyze_logs.py --since "<開始時刻>" --watch --must-match good,synced,goals`
+
+`good`, `synced`, `goals` は全クライアントで一致する必要があります（PASS）。`racy` と `lost` はずれることがあり、
+`eventLamp` は途中参加者だけ違います。これらは仕込んだバグで、本物の VRChat の通信の上でも同じことが起きるかを確かめられます。

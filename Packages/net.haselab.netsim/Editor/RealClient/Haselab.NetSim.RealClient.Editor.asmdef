@@ -1,11 +1,13 @@
 {
-    "name": "Haselab.NetSim.SampleWorld.Editor",
-    "rootNamespace": "Haselab.NetSim.SampleWorld",
+    "name": "Haselab.NetSim.RealClient.Editor",
+    "rootNamespace": "Haselab.NetSim.RealClient",
     "references": [
-        "Haselab.NetSim.Editor",
         "VRC.SDKBase",
+        "VRC.SDKBase.Editor",
+        "VRC.SDK3.Editor",
         "VRC.Udon",
-        "Haselab.NetSim.RealClient.Editor"
+        "UdonSharp.Runtime",
+        "UdonSharp.Editor"
     ],
     "includePlatforms": [
         "Editor"
