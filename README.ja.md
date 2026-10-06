@@ -9,7 +9,7 @@ Unity Editor（ClientSim）の中で複数のクライアントを同時に動�
 起動する Unity Editor は **1 つだけ** です。各クライアントは同じ Play セッションの中にあるワールドのシーンの写しなので、
 Editor や VRChat クライアントを複数起動する必要はありません。詳しくは[仕組み](Packages/net.haselab.netsim/Documentation~/README.ja.md#仕組み)を参照してください。
 
-> 状態: 早期プレビュー（0.1.0）。API は変わる可能性があります。
+> 状態: 早期プレビュー（0.2.0）。API は変わる可能性があります。
 
 ## 機能
 
@@ -68,7 +68,7 @@ NetSim は Editor 専用のアセンブリに入っており、ワールドの�
 https://github.com/haselab-net/vrchat-netsim.git?path=Packages/net.haselab.netsim
 ```
 
-URL の末尾にリリースのタグ（`#v0.1.0` など）を付けると、バージョンを固定できます。
+URL の末尾にリリースのタグ（`#v0.2.0` など）を付けると、バージョンを固定できます。
 
 ### VRChat Creator Companion（VPM）
 

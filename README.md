@@ -10,7 +10,7 @@ and packet loss — so you can reproduce and debug sync problems without uploadi
 You only start **one** Unity Editor: every simulated client is a copy of the world scene inside the same play session,
 so no extra Editor instances or VRChat clients are needed. See [how it works](Packages/net.haselab.netsim/Documentation~/README.md#how-it-works).
 
-> Status: early preview (0.1.0). APIs may change.
+> Status: early preview (0.2.0). APIs may change.
 
 ## Features
 
@@ -68,7 +68,7 @@ NetSim lives in an Editor-only assembly and is never included in world builds.
 https://github.com/haselab-net/vrchat-netsim.git?path=Packages/net.haselab.netsim
 ```
 
-Append `#v0.1.0` (a release tag) to the URL to pin a version.
+Append `#v0.2.0` (a release tag) to the URL to pin a version.
 
 ### VRChat Creator Companion (VPM)
 

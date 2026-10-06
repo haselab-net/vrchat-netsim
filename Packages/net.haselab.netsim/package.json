@@ -1,7 +1,7 @@
 {
   "name": "net.haselab.netsim",
   "displayName": "NetSim - Multi-client Network Simulator for VRChat Worlds",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "unity": "2022.3",
   "description": "Editor-only simulator that runs multiple ClientSim clients in Unity Editor and routes Udon networking (network events, synced variables, ownership, late join, master leave, object sync) through a simulated server with latency, jitter and loss.",
   "author": {

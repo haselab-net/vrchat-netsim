@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.0] - 2026-10-06
 
 - Real VRChat client test: `RealClientTest.BuildAndTest(botPrefab, clients, config)` (Build & Test with a temporary
   debug bot, scene backup / restore, recovery after an interrupted build, upload guard, VRChat client path detection),
