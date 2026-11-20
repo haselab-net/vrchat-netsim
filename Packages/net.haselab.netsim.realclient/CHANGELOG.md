@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.1] - 2026-11-21
+
+- No changes; released together with NetSim 0.3.1.
+
 ## [0.3.0] - 2026-11-21
 
 - First release as a separate package. The real VRChat client test (`RealClientTest.BuildAndTest`, the build guard,

@@ -13,6 +13,8 @@ Udon 通信を、遅延・ゆらぎ・欠落のある疑似サーバー経由で
 
 ## クイックスタート
 
+以下の内容をサンプルワールドで順に試す[スクリーンショット付きのチュートリアル](https://github.com/haselab-net/vrchat-netsim/blob/main/docs/tutorial/README.ja.md)があります。
+
 1. パッケージをインストールし（リポジトリの README を参照）、自分のワールドのシーンを開きます。
 2. **Tools > NetSim > NetSim Window** を開きます。
 3. ネットワークの条件を選びます（*Typical* や *Bad Wi-Fi* などのプリセット、または自分で値を入れる）。
@@ -47,11 +49,16 @@ Udon 通信を、遅延・ゆらぎ・欠落のある疑似サーバー経由で
    **Write snapshot report** は、差分、見た目の差分、通信の統計、NetSim のログを `Logs/NetSim/snapshot_*.md` に保存します。
 7. **Leave** でクライアントを退出させます。マスターを退出させるとマスター移譲のテストになります。
    **+ Late joiner** は途中参加者を加えます。
+8. **Stop NetSim** で写しとそのプレイヤーが消え、C0 だけに戻ります。
+
+ClientSim の案内で **Accept** を押したあとは、Game ビューがマウスをつかんだままになります。**Esc** を押してマウスを
+放してからウィンドウを操作してください。
 
 ### シナリオ（Scenarios）
 
-シナリオを選び、**Run now** を押します（必要なら Play モードに入り、終わったあとも Play モードのままなので、
-クライアントの状態を見られます）。**Add to batch** で実行を集め（*+ this scenario × every preset* で全プリセット分）、
+シナリオを選び、**Run now** を押します。毎回新しい Play セッションで実行し（Play モードなら一度止めて入り直すので、
+前に試した状態が結果に影響しません）、終わったあとも Play モードのままです。シナリオの写しは、次に NetSim を始めるか
+*Remove the copies now* を押すまで残り、Hierarchy で `(stopped)` と表示されます。**Add to batch** で実行を集め（*+ this scenario × every preset* で全プリセット分）、
 **Run batch** で無人で順に実行します（各回は新しい Play セッション）。**Copy command line for this batch** で、
 同じことをするコマンドラインをコピーできます（[コマンドライン](#コマンドライン)）。
 
@@ -221,8 +228,10 @@ static class MyWorldScenarios
 NetSim ウィンドウからは [シナリオ（Scenarios）](#シナリオscenarios) を参照してください。コードからは:
 
 ```csharp
-// Play モードでも Edit モードでも可。必要なら Play モードに入り、終わったあとも Play モードのまま
+// 新しい Play セッションで実行（Play モードに入る。Play 中なら入り直す）。終わったあとも Play モードのまま
 Haselab.NetSim.NetSimScenarioRunner.RunInPlayMode("doors");
+// いまの Play セッションで、いまのワールドの状態のまま実行
+Haselab.NetSim.NetSimScenarioRunner.RunInPlayMode("doors", freshPlaySession: false);
 // Play モードで、条件を指定して（null = ウィンドウの設定、timeScale < 0 = ウィンドウの速さ）
 Haselab.NetSim.NetSimScenarioRunner.RunWhenReady("doors",
     new Haselab.NetSim.NetSimConfig { latencyMin = 0.1f, latencyMax = 0.4f, eventDropRate = 0.02f }, timeScale: 4);

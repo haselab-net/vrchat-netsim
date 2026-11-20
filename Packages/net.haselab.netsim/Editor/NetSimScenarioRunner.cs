@@ -91,21 +91,37 @@ namespace Haselab.NetSim
         }
 
         /// <summary>
-        /// Runs a scenario in play mode and leaves play mode running afterwards (so the clients can be inspected).
-        /// From edit mode it enters play mode first. `step` is a scenario name or a suite step string (see NetSimSuite).
+        /// Runs a scenario in a fresh play session (play mode is restarted when it is on, so the world starts from its
+        /// initial state) and leaves play mode running afterwards so the clients can be inspected.
+        /// freshPlaySession = false runs it in the current play session instead, on the world as it is now.
+        /// `step` is a scenario name or a suite step string (see NetSimSuite).
         /// </summary>
-        public static void RunInPlayMode(string step)
+        public static void RunInPlayMode(string step, bool freshPlaySession = true)
         {
-            if (EditorApplication.isPlaying) { StartStep(step); return; }
+            if (Pending) { Debug.LogWarning("[NetSim] a scenario is already about to start"); return; }   // e.g. a double click
+            if (EditorApplication.isPlaying && !freshPlaySession) { StartStep(step); return; }
             SessionState.SetString(KeyPendingRun, step);
-            EditorApplication.isPlaying = true;
+            if (EditorApplication.isPlaying) EditorApplication.isPlaying = false;   // enter again in EnteredEditMode
+            else EditorApplication.isPlaying = true;
         }
+
+        /// <summary>RunInPlayMode was called and the play session it waits for has not started the scenario yet.</summary>
+        public static bool Pending => SessionState.GetString(KeyPendingRun, "") != "";
+        /// <summary>Forgets a run requested with RunInPlayMode that has not started yet.</summary>
+        public static void CancelPending() => SessionState.EraseString(KeyPendingRun);
 
         // the pending run survives the domain reload of entering play mode
         [InitializeOnLoadMethod]
         static void RegisterPendingRun()
         {
             EditorApplication.playModeStateChanged += s => {
+                if (s == PlayModeStateChange.EnteredEditMode && SessionState.GetString(KeyPendingRun, "") != "")
+                {
+                    // not delayCall: it does not fire while the editor is in the background
+                    EditorApplication.CallbackFunction enter = null;
+                    enter = () => { EditorApplication.update -= enter; EditorApplication.isPlaying = true; };
+                    EditorApplication.update += enter;
+                }
                 if (s == PlayModeStateChange.EnteredPlayMode)
                 {
                     var step = SessionState.GetString(KeyPendingRun, "");

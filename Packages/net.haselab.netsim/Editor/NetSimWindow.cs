@@ -52,7 +52,14 @@ namespace Haselab.NetSim
             mono = new GUIStyle(EditorStyles.textArea) { wordWrap = false, richText = false, font = Font.CreateDynamicFontFromOSFont(new[] { "Consolas", "Menlo", "Courier New" }, 11) };
         }
 
-        void OnInspectorUpdate() { if (EditorApplication.isPlaying || NetSimSuite.IsRunning) Repaint(); }
+        [NonSerialized] string lastState;
+        void OnInspectorUpdate()
+        {
+            // repaint while something runs, and once more when it stops (otherwise the last state stays on screen)
+            var state = $"{EditorApplication.isPlaying}|{NetSimSuite.IsRunning}|{NetSimSuite.RemainingSteps}|{NetSimSuite.Results.Length}|{NetSimScenarioRunner.Running}|{NetSimScenarioRunner.Pending}|{NetSim.Active}";
+            if (EditorApplication.isPlaying || NetSimSuite.IsRunning || state != lastState) Repaint();
+            lastState = state;
+        }
         void OnFocus() { nextReportScan = 0; }
 
         void OnGUI()
@@ -148,6 +155,11 @@ namespace Haselab.NetSim
                 using (new EditorGUI.DisabledScope(NetSimSession.Starting))
                     if (GUILayout.Button(NetSimSession.Starting ? "Starting…" : "Start NetSim", GUILayout.Height(28))) NetSimSession.Start();
                 EditorGUILayout.LabelField("Starts the simulated network with the conditions above. You are C0 (the ClientSim player).", gray);
+                if (NetSim.Clients.Count > 1)
+                {
+                    EditorGUILayout.LabelField($"The {NetSim.Clients.Count - 1} copies of the last scenario are still loaded for inspection (Hierarchy: \"(stopped)\"); starting NetSim removes them.", gray);
+                    if (GUILayout.Button("Remove the copies now")) NetSim.RemoveCopies();
+                }
                 return;
             }
 
@@ -350,12 +362,12 @@ namespace Haselab.NetSim
             st.timeScale = EditorGUILayout.Slider(new GUIContent("Speed (time scale)", "The editor runs this much faster than real time during a scenario (network delays stay in simulated time)"), st.timeScale, 1f, 10f);
             if (EditorGUI.EndChangeCheck()) NetSimSettings.Save();
 
-            bool busy = NetSimScenarioRunner.Running || NetSimSuite.IsRunning;
+            bool busy = NetSimScenarioRunner.Running || NetSimScenarioRunner.Pending || NetSimSuite.IsRunning;
             using (new EditorGUILayout.HorizontalScope())
             {
                 using (new EditorGUI.DisabledScope(busy))
                 {
-                    if (GUILayout.Button(new GUIContent("Run now", "Runs in play mode (entered if needed) and stays in play mode afterwards so you can look at the clients"), GUILayout.Height(26)))
+                    if (GUILayout.Button(new GUIContent("Run now", "Runs in a fresh play session (play mode is restarted if it is on) and stays in play mode afterwards so you can look at the clients"), GUILayout.Height(26)))
                         NetSimScenarioRunner.RunInPlayMode(CurrentStep(st));
                     if (GUILayout.Button(new GUIContent("Add to batch", "Adds this scenario with the current network conditions to the batch list"), GUILayout.Height(26)))
                     { st.batch = st.batch.Concat(new[] { CurrentStep(st) }).ToArray(); NetSimSettings.Save(); }
@@ -363,6 +375,7 @@ namespace Haselab.NetSim
                 using (new EditorGUI.DisabledScope(!busy))
                     if (GUILayout.Button("Stop", GUILayout.Height(26), GUILayout.Width(60)))
                     {
+                        NetSimScenarioRunner.CancelPending();
                         if (NetSimSuite.IsRunning) NetSimSuite.Cancel();
                         else if (EditorApplication.isPlaying) EditorApplication.isPlaying = false;
                     }
@@ -525,13 +538,13 @@ namespace Haselab.NetSim
         static NetSimHierarchyLabels()
         {
             EditorApplication.hierarchyWindowItemOnGUI += (id, rect) => {
-                if (!NetSim.Active) return;
+                if (!EditorApplication.isPlaying || NetSim.Clients.Count < 2) return;
                 foreach (var c in NetSim.Clients)
                 {
                     if (!c.scene.IsValid() || c.scene.handle != id) continue;
                     if (style == null) style = new GUIStyle(EditorStyles.miniBoldLabel) { alignment = TextAnchor.MiddleRight, normal = { textColor = new Color(0.35f, 0.7f, 1f) } };
                     bool master = c.player != null && c.player.playerId == NetSim.MasterId;
-                    var text = $"C{c.index} {(c.isOriginal ? "You" : c.player?.displayName)}{(master ? " ★" : "")}{(c.joined ? "" : " (left)")}{(NetSimView.Shown == c.index ? "  [viewing]" : "")}";
+                    var text = $"C{c.index} {(c.isOriginal ? "You" : c.player?.displayName)}{(master ? " ★" : "")}{(c.joined ? "" : " (left)")}{(!NetSim.Active ? " (stopped)" : NetSimView.Shown == c.index ? "  [viewing]" : "")}";
                     GUI.Label(new Rect(rect.x, rect.y, rect.width - 24, rect.height), text, style);
                 }
             };
