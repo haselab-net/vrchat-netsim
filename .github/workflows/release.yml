@@ -1,5 +1,5 @@
-# Push a tag "v<version>" (matching Packages/net.haselab.netsim/package.json) to publish a release and update the
-# VPM listing on GitHub Pages. "Run workflow" rebuilds the listing from the existing releases without releasing.
+# Push a tag "v<version>" (matching the version in the package.json of every package in PACKAGES) to publish a release
+# with one zip per package and update the VPM listing on GitHub Pages. "Run workflow" rebuilds the listing from the existing releases without releasing.
 name: Release
 
 on:
@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  PACKAGE: net.haselab.netsim
+  PACKAGES: net.haselab.netsim net.haselab.netsim.realclient
 
 jobs:
   release:
@@ -25,24 +25,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check version
+      - name: Check versions
         id: version
         run: |
-          version=$(jq -r .version "Packages/$PACKAGE/package.json")
-          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
-            echo "tag $GITHUB_REF_NAME does not match package.json version $version" >&2; exit 1
-          fi
+          version=${GITHUB_REF_NAME#v}
+          for p in $PACKAGES; do
+            v=$(jq -r .version "Packages/$p/package.json")
+            if [ "$v" != "$version" ]; then
+              echo "tag $GITHUB_REF_NAME does not match $p/package.json version $v" >&2; exit 1
+            fi
+          done
           echo "version=$version" >> "$GITHUB_OUTPUT"
-      - name: Build zip
+      - name: Build zips
         run: |
-          cd "Packages/$PACKAGE"
-          zip -r -X "$GITHUB_WORKSPACE/$PACKAGE-${{ steps.version.outputs.version }}.zip" .
+          for p in $PACKAGES; do
+            (cd "Packages/$p" && zip -r -X "$GITHUB_WORKSPACE/$p-${{ steps.version.outputs.version }}.zip" .)
+          done
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "$PACKAGE-${{ steps.version.outputs.version }}.zip" "Packages/$PACKAGE/package.json" \
-            --title "$GITHUB_REF_NAME" --notes-file <(awk '/^## /{n++} n==1' "Packages/$PACKAGE/CHANGELOG.md")
+          main=${PACKAGES%% *}
+          gh release create "$GITHUB_REF_NAME" $(for p in $PACKAGES; do echo "$p-${{ steps.version.outputs.version }}.zip"; done) "Packages/$main/package.json" \
+            --title "$GITHUB_REF_NAME" --notes-file <(awk '/^## /{n++} n==1' "Packages/$main/CHANGELOG.md")
 
   listing:
     needs: release

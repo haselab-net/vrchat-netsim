@@ -1,7 +1,7 @@
 // Real VRChat client test of the sample world: builds SampleWorld.unity with SampleWorldBot and starts 3 clients.
 //
 //   Menu: Tools > NetSim > Sample World > Build & Test with Bot (3 clients)
-//   then: python <package>/Tools~/analyze_logs.py --since "<start time>" --watch --must-match good,synced,goals
+//   then: python <net.haselab.netsim.realclient>/Tools~/analyze_logs.py --since "<start time>" --watch --must-match good,synced,goals
 //
 // Needs Steam running, VRChat installed and the VRChat SDK logged in. See the sample's README.
 #if UNITY_EDITOR

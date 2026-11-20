@@ -2,53 +2,57 @@
 
 English | [日本語](README.ja.md)
 
-**NetSim** is an Editor-only multi-client network simulator for VRChat world development.
-It runs several simulated clients side by side inside Unity Editor (ClientSim) and routes
-Udon networking between them through a simulated server with configurable latency, jitter
-and packet loss — so you can reproduce and debug sync problems without uploading the world.
+**NetSim** tests the networking of a VRChat world inside the Unity Editor. It runs several clients side by side as
+copies of your world scene in one play session (ClientSim) and routes Udon networking between them through a simulated
+server with configurable latency, jitter and packet loss — so you can reproduce and debug sync problems without
+uploading the world or starting more Editors or VRChat clients.
 
-You only start **one** Unity Editor: every simulated client is a copy of the world scene inside the same play session,
-so no extra Editor instances or VRChat clients are needed. See [how it works](Packages/net.haselab.netsim/Documentation~/README.md#how-it-works).
+Use it from the **NetSim window** (no code), from C# scenarios, or from the command line (scripts, CI, AI agents).
 
-> Status: early preview (0.2.0). APIs may change.
+> Status: early preview (0.3.0). APIs may change.
 
 ## Features
 
-- Each simulated client is an additive copy of the world scene in its own physics scene
+- **NetSim window** (*Tools > NetSim > NetSim Window*): network presets, add / remove clients in play mode, choose whose
+  copy the Game view shows, interact or take ownership as any client, compare clients, run scenarios and batches,
+  read reports
+- Built-in scenarios that work on any world: `join-check`, `random-play`, `late-join`, `master-leave` (PASS / FAIL)
+- Each client is an additive copy of the world scene in its own physics scene
 - `SendCustomNetworkEvent` (All / Others / Owner / Self, including `[NetworkCallable]` parameters)
 - Synced variables (Manual / Continuous, `RequestSerialization`), including lost writes from non-owners
 - Ownership (`SetOwner` / `GetOwner` / `IsOwner` / `OnOwnershipTransferred`) and master migration
 - Late join and master leave
 - Minimal `VRCObjectSync` emulation and pickup → walk → drop carrying by test bots
-- Configurable latency / jitter (reordering) / loss per message type ([`NetSimConfig`](Packages/net.haselab.netsim/Documentation~/README.md#network-conditions-latency-jitter-loss))
-- Unattended suite runner that survives Play Mode transitions and domain reloads
-- **Real VRChat client test**: run a debug bot in several real VRChat clients (SDK Build & Test) and compare their logs
-  ([manual](Packages/net.haselab.netsim/Documentation~/README.md#testing-in-the-real-vrchat-client))
+- Configurable latency / jitter (reordering) / loss per message type, shared by the window, code and command line
+  (`ProjectSettings/NetSimSettings.json`)
+- Unattended batches that survive play-mode transitions and domain reloads; a command line with exit codes
 
-## Try it with the sample world
+## Quick start
 
-1. Install the package (below) and import **Sample World** from its Package Manager page.
-2. Open `SampleWorld.unity` from the imported sample and enter Play Mode (ClientSim).
-3. Run `Haselab.NetSim.NetSimScenarioRunner.RunWhenReady("sample-world");`
-4. Read the report in `Logs/NetSim/`. The world contains correct sync patterns and planted bugs (a write without
-   ownership, a "take ownership, then write" race, state that only lives in a network event); the report ends with a
-   checklist showing that NetSim finds exactly the bugs. See the [sample's README](Packages/net.haselab.netsim/Samples~/SampleWorld/README.md).
+1. Install the package (below) and open your world scene.
+2. *Tools > NetSim > NetSim Window*.
+3. **Manual test**: *Enter Play Mode* → *Start NetSim* → *+ Client* (twice). Play as C0 in the Game view, select an
+   object in the Hierarchy and press *Interact* for C1 and C2, then *Compare now*.
+4. **Scenarios**: pick `random-play` and *Run now*; read the result in **Reports** (`Logs/NetSim/`).
 
-## Quick start (your own world)
+To see NetSim find real bugs, import the **Sample World** sample from the package's Package Manager page, open
+`SampleWorld.unity` and run the `sample-world` scenario: the world contains correct sync patterns and planted bugs, and
+the report's checklist confirms that NetSim found exactly the planted ones.
 
-1. Install the package (below) and import **Example Scenarios** from its Package Manager page.
-2. Open your world scene and enter Play Mode (ClientSim).
-3. Run a scenario, e.g. from a small Editor script or an "execute C#" tool:
+The built-in scenarios press random buttons. A scenario that plays your game the way people do finds far more; start
+from the **Scenario Template** sample and see the [manual](Packages/net.haselab.netsim/Documentation~/README.md).
 
-```csharp
-Haselab.NetSim.NetSimScenarioRunner.RunWhenReady("example-consistency",
-    new Haselab.NetSim.NetSimConfig { latencyMin = 0.1f, latencyMax = 0.3f, eventDropRate = 0.02f });
+## For scripts, CI and AI agents
+
+```
+Unity.exe -batchmode -projectPath <project> -executeMethod Haselab.NetSim.NetSimCli.Run \
+          -netsimScene Assets/MyWorld.unity -netsimRun random-play -netsimRun late-join
 ```
 
-4. Read the report in `Logs/NetSim/`.
-
-The example scenarios use a world-agnostic random bot. Write your own scenarios and bots for your world's
-game flow; see the [manual](Packages/net.haselab.netsim/Documentation~/README.md).
+Exit code 0 = all scenarios passed, 2 = a check failed, 1 = error; reports in `Logs/NetSim/`, one result line per
+scenario in `Logs/NetSim/cli-result.txt`. The window's *Copy command line for this batch* writes this command for
+you. In an open Editor, `Haselab.NetSim.NetSimScenarioRunner.RunInPlayMode("random-play")` does the same for one
+scenario. See [Command line](Packages/net.haselab.netsim/Documentation~/README.md#command-line).
 
 ## Requirements
 
@@ -60,16 +64,6 @@ NetSim lives in an Editor-only assembly and is never included in world builds.
 
 ## Installation
 
-### Unity Package Manager (git URL)
-
-`Window > Package Manager > + > Add package from git URL...`
-
-```
-https://github.com/haselab-net/vrchat-netsim.git?path=Packages/net.haselab.netsim
-```
-
-Append `#v0.2.0` (a release tag) to the URL to pin a version.
-
 ### VRChat Creator Companion (VPM)
 
 1. Add the listing: open [this link](https://haselab-net.github.io/vrchat-netsim/) and click **Add to VRChat Creator Companion**,
@@ -79,27 +73,42 @@ Append `#v0.2.0` (a release tag) to the URL to pin a version.
    https://haselab-net.github.io/vrchat-netsim/index.json
    ```
 
-2. In your world project's **Manage Project**, add **NetSim - Multi-client Network Simulator for VRChat Worlds**.
+2. In your world project's **Manage Project**, add **NetSim - Multi-client Sync Test for VRChat Worlds**.
+
+### Unity Package Manager (git URL)
+
+`Window > Package Manager > + > Add package from git URL...`
+
+```
+https://github.com/haselab-net/vrchat-netsim.git?path=Packages/net.haselab.netsim
+```
+
+Append `#v0.3.0` (a release tag) to the URL to pin a version.
+
+## Optional: test in real VRChat clients
+
+NetSim is fast but simplified. The separate package **NetSim Real Client Test** (`net.haselab.netsim.realclient`) runs a
+debug bot in several real VRChat clients (SDK *Build & Test*) and compares their logs — see its
+[README](Packages/net.haselab.netsim.realclient/README.md). It is not needed for anything above. (Up to 0.2.0 it was
+part of the NetSim package.)
 
 ## Repository layout
 
 ```
-Packages/net.haselab.netsim/
-  package.json
-  Editor/                 NetSim core and suite runner (Editor-only asmdef)
-  Editor/RealClient/      Real VRChat client test (Build & Test with a bot)
-  Tools~/                 analyze_logs.py, vrc_clients.py (real client test)
-  Samples~/SampleWorld/       Sample world with planted sync bugs and its scenario (importable from Package Manager)
-  Samples~/ExampleScenarios/  World-agnostic example scenarios / random test bot (importable from Package Manager)
-  Documentation~/         Manual: how it works, writing scenarios, limitations
-  CHANGELOG.md
-.github/workflows/release.yml  Tag v<version> -> GitHub release (zip) + VPM listing on GitHub Pages
-tools/build_listing.py         Builds the VPM listing from the releases
+Packages/net.haselab.netsim/            NetSim: in-editor multi-client sync test
+  Editor/                               simulator, scenarios, window, command line (Editor-only asmdef)
+  Samples~/SampleWorld/                 world with planted sync bugs + its scenario
+  Samples~/ScenarioTemplate/            starting point for your own scenario
+  Documentation~/                       manual
+Packages/net.haselab.netsim.realclient/ optional: real VRChat client test (bot + Build & Test, Tools~/*.py)
+.github/workflows/release.yml           tag v<version> -> GitHub release (both zips) and the VPM listing on GitHub Pages
+tools/build_listing.py                  builds the VPM listing from the releases
 ```
 
 ## Development
 
-This project was developed with [Claude Code](https://claude.com/claude-code); much of the code and documentation was written by Claude (Anthropic) under human direction and review.
+This project was developed with [Claude Code](https://claude.com/claude-code). Much of the code and documentation was
+written by Claude (Anthropic) under human direction and review.
 
 ## License
 

@@ -1,0 +1,33 @@
+{
+  "name": "net.haselab.netsim.realclient",
+  "displayName": "NetSim Real Client Test - multi-client Build & Test with a bot for VRChat Worlds",
+  "version": "0.3.0",
+  "unity": "2022.3",
+  "description": "Optional companion of NetSim: runs a debug bot in several real VRChat clients (SDK Build & Test) and compares their logs. Not needed for the in-editor multi-client simulation.",
+  "author": {
+    "name": "haselab-net",
+    "url": "https://github.com/haselab-net"
+  },
+  "license": "MIT",
+  "licensesUrl": "https://github.com/haselab-net/vrchat-netsim/blob/main/LICENSE",
+  "documentationUrl": "https://github.com/haselab-net/vrchat-netsim/blob/main/Packages/net.haselab.netsim.realclient/README.md",
+  "changelogUrl": "https://github.com/haselab-net/vrchat-netsim/blob/main/Packages/net.haselab.netsim.realclient/CHANGELOG.md",
+  "keywords": [
+    "vrchat",
+    "udon",
+    "udonsharp",
+    "network",
+    "sync",
+    "testing"
+  ],
+  "vpmDependencies": {
+    "com.vrchat.worlds": ">=3.10.0"
+  },
+  "samples": [
+    {
+      "displayName": "Sample World Bot",
+      "description": "Bot for NetSim's Sample World (import that sample from the NetSim package first).",
+      "path": "Samples~/SampleWorldBot"
+    }
+  ]
+}

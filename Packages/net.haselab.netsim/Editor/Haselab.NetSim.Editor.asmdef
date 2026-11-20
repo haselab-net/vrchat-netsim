@@ -8,7 +8,8 @@
         "VRC.ClientSim",
         "VRC.ClientSim.Editor",
         "UdonSharp.Runtime",
-        "UdonSharp.Editor"
+        "UdonSharp.Editor",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [
         "Editor"
@@ -17,7 +18,7 @@
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

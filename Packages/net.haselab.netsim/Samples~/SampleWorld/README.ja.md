@@ -16,33 +16,20 @@
 
 ## 実行
 
-1. `SampleWorld.unity` を開き、Play モード（ClientSim）に入ります。
-2. シナリオを実行します（小さな Editor スクリプトや「C# を実行する」ツールなどから）。
+1. `SampleWorld.unity` を開きます。
+2. *Tools > NetSim > NetSim Window* > **Scenarios** > `sample-world` > **Run now**
+   （コードからは `Haselab.NetSim.NetSimScenarioRunner.RunInPlayMode("sample-world");`）。
+3. レポート（**Reports** タブ、`Logs/NetSim/sample-world_*.md`）の最後に `## Verdict` のチェックリストがあり、上の表の期待が
+   すべて満たされると **PASS** になります。
 
-```csharp
-Haselab.NetSim.NetSimScenarioRunner.RunWhenReady("sample-world");
-```
+組み込みのシナリオ（`random-play`, `late-join` など）もこのワールドで動き、仕込んだバグを FAIL として報告します。
 
-3. `Logs/NetSim/sample-world_*.md` を読みます。最後に `## Verdict` のチェックリストがあり、上の表の期待がすべて満たされると
-   **PASS** になります。
-
-**Example Scenarios** サンプルの例のシナリオ（`example-consistency`, `example-latejoin`, `example-masterleave`）も
-このワールドで動きます。
+手でバグを見るには: **Manual test** > *Start NetSim* > *+ Client* を 2 回、Hierarchy で `RacyCounter` を選んで C1 と C2 の
+*Interact* を続けて押すか、`LostWriteCounter` を C1 として *Interact* し、*Compare now* を押します。
 
 このシナリオは、メッセージの欠落がない状態（既定の設定）を前提にしています。`eventDropRate > 0` にすると、
 イベントだけのトグルは初めからいるクライアント同士でもずれ、依頼が失われた分だけ GoodCounter の数が少なくなります。
 これらは欠落があるときのそれぞれの書き方の、想定どおりの挙動です。
 
-## 実機の VRChat でのテスト
-
-`SampleWorldBot.prefab` は、同じワールドを実機の VRChat クライアントで試すためのボットです（マニュアルの「実機の VRChat での
-テスト」を参照）。各クライアントのボットが 2 分間、ランダムにステーションを押してボールを運び、そのあと操作をやめて
-`state good=.. racy=.. lost=.. synced=.. eventLamp=.. goals=..` を書き続けます。
-
-1. Steam を起動し、VRChat SDK にログインして（VRChat SDK > Show Control Panel）、`SampleWorld.unity` を保存します。
-2. *Tools > NetSim > Sample World > Build & Test with Bot (3 clients)* を実行します。
-3. 任意: 1 分ほどしてから途中参加者を追加します。`python vrc_clients.py launch 1`（パッケージの `Tools~` で実行）
-4. `python analyze_logs.py --since "<開始時刻>" --watch --must-match good,synced,goals`
-
-`good`, `synced`, `goals` は全クライアントで一致する必要があります（PASS）。`racy` と `lost` はずれることがあり、
-`eventLamp` は途中参加者だけ違います。これらは仕込んだバグで、本物の VRChat の通信の上でも同じことが起きるかを確かめられます。
+同じワールドを実機の VRChat クライアントで試すには、任意のパッケージ NetSim Real Client Test の **Sample World Bot**
+サンプルを参照してください。

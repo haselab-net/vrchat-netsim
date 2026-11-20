@@ -8,8 +8,8 @@
 //   EventToggle       state only in a network event (bug)                    -> NetSim must report a late-join-only difference
 //   Ball + Goal       VRCObjectSync pickup carried into a trigger, owner counts -> goals must be counted once on every client
 //
-// Open SampleWorld.unity, enter Play Mode, then e.g.:
-//   Haselab.NetSim.NetSimScenarioRunner.RunWhenReady("sample-world");
+// Open SampleWorld.unity, then Tools > NetSim > NetSim Window > Scenarios > "sample-world" > Run now, or from code:
+//   Haselab.NetSim.NetSimScenarioRunner.RunInPlayMode("sample-world");
 // The report (Logs/NetSim/) ends with "## Verdict" listing whether every expectation above was met.
 #if UNITY_EDITOR
 using System.Collections;
@@ -31,7 +31,7 @@ namespace Haselab.NetSim.SampleWorld
         /// <summary>Chance per client per simulated second to start carrying the ball (when nobody carries it).</summary>
         public static float CarryProbability = 0.15f;
 
-        [NetSimScenario("sample-world")]
+        [NetSimScenario("sample-world", Description = "Sample world: plays, races the counters, adds a late joiner; PASS = NetSim found exactly the planted bugs.")]
         static IEnumerator SampleWorld(NetSimScenarioContext ctx)
         {
             yield return ctx.AddClients(2, "Early");
@@ -75,20 +75,15 @@ namespace Haselab.NetSim.SampleWorld
             bool LateDiff(string name) => lateOnly.Any(x => x.StartsWith($"{Root}/{name}"));
             var goals = ctx.Joined.Select(c => NetSim.Var(c, $"{Root}/Goal", "goals")).Select(v => v is int i ? i : -1).ToList();
 
-            var checks = new List<(string, bool)>
-            {
-                ("GoodCounter is consistent", !SyncedDiff("GoodCounter")),
-                ("SyncedToggle is consistent (incl. late joiner)", !SyncedDiff("SyncedToggle") && !LateDiff("SyncedToggleLamp")),
-                ("Goal count is consistent and > 0", !SyncedDiff("Goal") && goals.Distinct().Count() == 1 && goals[0] > 0),
-                ("bug detected: RacyCounter differs after simultaneous clicks", racyRounds > 0),
-                ("bug detected: LostWriteCounter differs between clients", SyncedDiff("LostWriteCounter")),
-                ("bug detected: EventToggle lamp differs for the late joiner", LateDiff("EventToggleLamp")),
-                ("no halted UdonBehaviours", NetSim.HaltedBehaviours().Count == 0),
-            };
-            ctx.R("## Verdict");
             ctx.R($"- goals per client: {string.Join(", ", goals)}");
-            foreach (var (name, ok) in checks) ctx.R($"- [{(ok ? "x" : " ")}] {name}");
-            ctx.R($"- **{(checks.All(c => c.Item2) ? "PASS" : "FAIL")}**");
+            // listed under "## Verdict" at the end of the report (PASS when all hold)
+            ctx.Check("GoodCounter is consistent", !SyncedDiff("GoodCounter"));
+            ctx.Check("SyncedToggle is consistent (incl. late joiner)", !SyncedDiff("SyncedToggle") && !LateDiff("SyncedToggleLamp"));
+            ctx.Check("Goal count is consistent and > 0", !SyncedDiff("Goal") && goals.Distinct().Count() == 1 && goals[0] > 0);
+            ctx.Check("bug detected: RacyCounter differs after simultaneous clicks", racyRounds > 0);
+            ctx.Check("bug detected: LostWriteCounter differs between clients", SyncedDiff("LostWriteCounter"));
+            ctx.Check("bug detected: EventToggle lamp differs for the late joiner", LateDiff("EventToggleLamp"));
+            ctx.Check("no halted UdonBehaviours", NetSim.HaltedBehaviours().Count == 0);
         }
 
         // ------------------------------------------------------------------ bot
