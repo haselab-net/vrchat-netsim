@@ -3,11 +3,75 @@
 [English](README.md) | 日本語
 
 NetSim は、1 回の Unity Editor の Play セッション（ClientSim）の中で複数の VRChat クライアントを動かし、それらの間の
-Udon 通信を、遅延・ゆらぎ・欠落のある疑似サーバー経由でやり取りさせます。シナリオ（C# のコルーチン）がクライアントを
-追加し、ボットでワールドを操作し、クライアント間の違いをレポートします。
+Udon 通信を、遅延・ゆらぎ・欠落のある疑似サーバー経由でやり取りさせます。NetSim ウィンドウから手でクライアントを
+操作することも、シナリオ（組み込みのもの、または自分で書く C# のコルーチン）にクライアントの追加、ボットによる操作、
+クライアント間の違いのレポートをさせることもできます。シナリオはウィンドウ、コード、コマンドラインから実行できます。
 
 これはデバッグの補助であり、VRChat のネットワークを忠実に再実装したものではありません。重要な結果は、実際の VRChat
-クライアントを複数使ったテスト（複数クライアントでの「Build & Test」）で確かめてください。
+クライアントを複数使ったテスト（複数クライアントでの「Build & Test」。任意のパッケージ
+[NetSim Real Client Test](../../net.haselab.netsim.realclient/README.ja.md) がボットで自動化します）で確かめてください。
+
+## クイックスタート
+
+1. パッケージをインストールし（リポジトリの README を参照）、自分のワールドのシーンを開きます。
+2. **Tools > NetSim > NetSim Window** を開きます。
+3. ネットワークの条件を選びます（*Typical* や *Bad Wi-Fi* などのプリセット、または自分で値を入れる）。
+4. 手で試す（**Manual test** タブ）か、シナリオに遊ばせます（**Scenarios** タブ）。結果は **Reports** タブに並び、
+   `Logs/NetSim/` に書き出されます。
+
+どちらもコードは要りません。同期のバグがわかっているワールドで試すには、**Sample World** サンプルをインポートして
+`SampleWorld.unity` を開き、`sample-world` シナリオを実行します。
+
+## NetSim ウィンドウ
+
+### ネットワークの条件
+
+片道の遅延（区間ごと）、欠落率、シードなど `NetSimConfig` の項目です（[後述](#ネットワークの条件遅延ゆらぎ欠落)）。
+`ProjectSettings/NetSimSettings.json` に保存され、手動のセッションと、設定を指定せずに始めたすべてのシナリオ
+（コードやコマンドラインから始めたものも）で使われます。チームでコミットして共有できます。手動のセッション中に変えると、
+すぐに反映されます（シードを除く）。
+
+### 手動のテスト（Manual test）
+
+1. Play モードに入ります（ボタンでも入れます）。自分は ClientSim のプレイヤー **C0** で、いつもどおり Game ビューで遊べます。
+2. **Start NetSim** を押し、ほかのプレイヤーの数だけ **+ Client** を押します。各クライアントはシーンの写しで、
+   Hierarchy では `C1 Remote1`, `C2 Remote2`, … という別々のシーンとして表示されます（`★` はマスター）。
+3. **View** で、Game ビューにどのクライアントの写しを映すかを選びます（*View all* は全部の写しを重ねて描きます）。
+   Game ビューでのマウスやキーボードの操作は、常に C0 として働きます。
+4. Hierarchy でオブジェクトを選ぶと（どの写しのものでもよい）、**Selected object** に各クライアントでのオーナーと
+   同期変数が並び、マスターと違う値は赤で表示されます。各クライアントとして **Interact**（インタラクト）、
+   **Own**（所有権を取る）、任意のイベントの実行ができます。2 つのクライアントの *Interact* を続けて押すのが、
+   「2 人が同時に押した」を再現するいちばん手軽な方法です。
+5. **Interact as another client** には、あるクライアントがいまインタラクトできる物が並びます。
+6. **Compare now** は、マスターとほかのクライアントで値が違う同期変数を一覧にします（*every 2 s* で自動更新）。
+   **Write snapshot report** は、差分、見た目の差分、通信の統計、NetSim のログを `Logs/NetSim/snapshot_*.md` に保存します。
+7. **Leave** でクライアントを退出させます。マスターを退出させるとマスター移譲のテストになります。
+   **+ Late joiner** は途中参加者を加えます。
+
+### シナリオ（Scenarios）
+
+シナリオを選び、**Run now** を押します（必要なら Play モードに入り、終わったあとも Play モードのままなので、
+クライアントの状態を見られます）。**Add to batch** で実行を集め（*+ this scenario × every preset* で全プリセット分）、
+**Run batch** で無人で順に実行します（各回は新しい Play セッション）。**Copy command line for this batch** で、
+同じことをするコマンドラインをコピーできます（[コマンドライン](#コマンドライン)）。
+
+組み込みのシナリオ（コード不要。どのワールドでも動きます）:
+
+| シナリオ | 内容 | PASS の条件 |
+|---|---|---|
+| `join-check` | クライアントが参加するだけ（誰も操作しない） | 全クライアントの同期変数が一致 |
+| `random-play` | 各クライアントが *Play time* の間、ランダムにボタンやインタラクト対象を押す | 終わったあと全員が一致 |
+| `late-join` | 遊んだあとで 1 人が途中参加 | 全員が一致し、途中参加者にも同じ物が見えている |
+| `master-leave` | 遊んでいる途中でマスターが退出 | 残った全員が一致し、動き続ける |
+
+*Clients*（C0 を含む合計）、*Play time*、*Bot activity* は組み込みのシナリオに効きます。組み込みのシナリオは
+プレイヤーが押せる物だけを押しますが、ゲームの中身は知りません。自分のワールド用に書いたシナリオ
+（[シナリオの書き方](#シナリオの書き方)）のほうが、はるかに多くの状態を試せます。
+
+### レポート（Reports）
+
+各シナリオは `Logs/NetSim/<シナリオ>[_<ラベル>]_<時刻>.md` を書き、最後の `## Verdict` に **PASS** / **FAIL** が
+付きます（[レポートの読み方](#レポートの読み方)）。**Reports** タブに新しい順に並び、Editor の中で読めます。
 
 ## 仕組み
 
@@ -47,7 +111,8 @@ Udon 通信を、遅延・ゆらぎ・欠落のある疑似サーバー経由で
 
 ### ネットワークの条件（遅延・ゆらぎ・欠落）
 
-疑似ネットワークは、シナリオを開始するときに渡す `NetSimConfig` で設定します。
+疑似ネットワークは、NetSim ウィンドウ（`ProjectSettings/NetSimSettings.json` に保存）か、シナリオを開始するときに渡す
+`NetSimConfig` で設定します。
 
 ```csharp
 Haselab.NetSim.NetSimScenarioRunner.RunWhenReady("sample-world", new Haselab.NetSim.NetSimConfig {
@@ -117,14 +182,17 @@ static class MyWorldScenarios
 }
 ```
 
-シナリオを含むアセンブリは Editor 専用にし、`Haselab.NetSim.Editor` を参照してください
-（`Samples~/ExampleScenarios/Haselab.NetSim.Samples.Editor.asmdef` を参照）。
+ファイルはどの `Editor` フォルダに置いてもかまいません（NetSim のアセンブリは自動で参照されます）。アセンブリ定義を使う
+場合は、Editor 専用にして `Haselab.NetSim.Editor` を参照してください。**Scenario Template** サンプルをひな形にできます。
+スクリプトがコンパイルされると、シナリオは NetSim ウィンドウの一覧に現れます。`[NetSimScenario("doors", Description = "...")]`
+と書くと、説明が 1 行表示されます。
 
 よく使うメンバー:
 
 | メンバー | 用途 |
 |---|---|
 | `ctx.AddClients(n, prefix, lateJoin)` | リモートクライアントを追加し、ビヘイビアが開始するまで待つ |
+| `ctx.Check(name, ok)` | 期待を記録する。すべて `## Verdict` に並び、全部が満たされたときだけ PASS |
 | `NetSim.AddClient(name, lateJoin)` / `NetSim.RemoveClient(c)` | 参加 / 退出（マスターを退出させるとマスター移譲のテストになる） |
 | `NetSim.MasterId = c.player.playerId` | ゲーム開始前にリモートクライアントをインスタンスの作成者にし、あとで退出できるようにする |
 | `ctx.PlayUntil(stop, timeout, bot)` | シミュレーション上の 1 秒ごとに、各クライアントについて `bot(client, rng)` を呼ぶ。進行が止まると打ち切る（`ctx.ProgressSignature`, `ctx.StallSeconds`） |
@@ -145,14 +213,17 @@ static class MyWorldScenarios
 ボットは、シミュレーション上の 1 秒ごとに各クライアントについて呼ばれる関数です。クライアントはそれぞれ独立に動くので、
 ボタンの同時押しや同じオブジェクトの取り合いが自然に起きます。ボットはプレイヤーと同じように振る舞うように書いて
 ください。アクティブでコライダーが有効なオブジェクトだけを操作し、見えていて押せるボタンだけを押し、拾えるオブジェクト
-だけを運びます。サンプルの `MonkeyBot` は、ワールドについて何も知らずにこれを行います。ゲームの目的を知っているボットの
+だけを運びます。組み込みの `NetSimBots.Random` は、ワールドについて何も知らずにこれを行います。ゲームの目的を知っているボットの
 ほうが、はるかに多くの問題を見つけます。
 
-## 実行
+## シナリオの実行
 
-Play モードで、シナリオを 1 つ実行する:
+NetSim ウィンドウからは [シナリオ（Scenarios）](#シナリオscenarios) を参照してください。コードからは:
 
 ```csharp
+// Play モードでも Edit モードでも可。必要なら Play モードに入り、終わったあとも Play モードのまま
+Haselab.NetSim.NetSimScenarioRunner.RunInPlayMode("doors");
+// Play モードで、条件を指定して（null = ウィンドウの設定、timeScale < 0 = ウィンドウの速さ）
 Haselab.NetSim.NetSimScenarioRunner.RunWhenReady("doors",
     new Haselab.NetSim.NetSimConfig { latencyMin = 0.1f, latencyMax = 0.4f, eventDropRate = 0.02f }, timeScale: 4);
 ```
@@ -164,12 +235,33 @@ Haselab.NetSim.NetSimSuite.Start(new[] {
     // scenario|label|latMin|latMax|eventDrop|serializationDrop|objectSyncDrop|seed|timeScale[|trace[|teleport]]
     "doors|fast|0.03|0.08|0|0|0|1|4",
     "doors|slow-lossy|0.2|0.6|0.05|0.05|0.05|2|4",
+    "doors",                                   // 省いた項目はウィンドウの設定になる
 });
 ```
 
-- レポート: `Logs/NetSim/<scenario>_<label>_<time>.md`、スイートの進捗: `Logs/NetSim/suite.log`
+- レポート: `Logs/NetSim/<scenario>_<label>_<time>.md`、スイートの進捗と、終わった各ステップの判定:
+  `Logs/NetSim/suite.log`。コードからは `NetSimSuite.Results` / `NetSimSuite.Finished` で結果を受け取れます。
 - `swap:<dir>` ステップは、`<dir>` 以下のファイル（プロジェクトと同じ構成）をすべてプロジェクトにコピーして再コンパイル
   します。これを使うと、1 つのスイートの中で、ワールドのスクリプトの 2 つの版に対して同じシナリオを実行できます。
+
+### コマンドライン
+
+スクリプト、CI、AI エージェント向けです。そのプロジェクトを別の Unity Editor で開いていないこと。`-quit` は付けません。
+
+```
+Unity.exe -batchmode -projectPath <プロジェクト> -executeMethod Haselab.NetSim.NetSimCli.Run
+          -netsimScene Assets/MyWorld.unity
+          -netsimRun random-play -netsimRun "late-join|slow|0.2|0.6|0.05|0.05|0.05|2|4"
+          -logFile <プロジェクト>/Logs/NetSim/cli-editor.log
+```
+
+- `-netsimRun` にはシナリオ名かスイートのステップ（上記）を渡し、何回でも指定できます。指定しないと、NetSim ウィンドウに
+  保存したバッチの一覧を実行します。ステップで省いた項目は `ProjectSettings/NetSimSettings.json` の値になります。
+- `-netsimList` は、知っているシナリオを `Logs/NetSim/scenarios.txt` に書いて終了します。
+- 終了コード: **0** 全シナリオが合格（またはチェックなし）、**2** チェックの不合格あり、**1** エラー（知らないシナリオ、
+  コンパイルエラー、例外、始まらなかったシナリオ）。`Logs/NetSim/cli-result.txt` に、ステップごとに
+  `<判定>\t<ステップ>\t<レポート>` の 1 行が書かれます。
+- `-batchmode` を付けないと、同じコマンドで Editor の画面を開いて実行し、終了します。
 
 ### レポートの読み方
 
@@ -189,97 +281,6 @@ Haselab.NetSim.NetSimSuite.Start(new[] {
 だけが残ります。負けた側は、次に値が変わるまで自分の値を表示し続けます。NetSim はこの状態を
 **synced vars ... differences** として検出します。オーナー以外のプレイヤーはオーナーにネットワークイベントで変更を依頼し、
 オーナーだけが書き込むようにすると避けられます。サンプルワールドの `RacyCounter` と `GoodCounter` を比べてください。
-
-## 実機の VRChat でのテスト
-
-NetSim は速いぶん簡略化されています。最後の確認として、実機の VRChat クライアントで同じようなテストを行えます。
-VRChat SDK の「Build & Test」でこの PC 上に複数のクライアントを起動し、ワールドの中の **ボット** が各クライアントで遊んで、
-行動と見えている状態を VRChat のログに書きます。そのあとスクリプトでクライアント同士のログを比べます。
-
-| 部品 | 役割 |
-|---|---|
-| 自分のボット（Udon / UdonSharp のプレハブ） | 各クライアントでローカルプレイヤーとして動き、操作したあと、同期されたワールドの状態を `state` 行に書く |
-| `RealClientTest.BuildAndTest(botPrefab, clients, config)` | 開いているシーンにボットを加え、N クライアント（Force Non-VR）で Build & Test し、終わったらシーンを元に戻す |
-| `RealClientBuildGuard` | シーンにボットがある間は、それ以外のビルド（アップロード）を止める |
-| `Tools~/analyze_logs.py` | クライアントのログを読み、各クライアントの最後の状態と、値が違うキーを一覧にする。`--must-match` で合否を出す |
-| `Tools~/vrc_clients.py` | 起動中のクライアントの一覧、同じインスタンスへの追加起動（途中参加）、指定したクライアントの終了（マスター退出など） |
-
-必要なもの: Windows、Steam の起動、VRChat のインストール（一度は起動しておく）、VRChat SDK へのログイン
-（VRChat SDK > Show Control Panel）。実時間で進むので時間がかかります（サンプルのボットは 2 分間遊びます）。
-
-### ボットの書き方
-
-ボットは、プレハブに付けた普通の UdonSharp のビヘイビアです（`[UdonBehaviourSyncMode(None)]`）。各クライアントが
-`Networking.LocalPlayer` として自分の分を動かします。次のように書きます。
-
-- ワールドのオブジェクトは実行時に探す（`GameObject.Find`, `transform.Find`）。プレハブからシーンのオブジェクトは参照できません。
-- プレイヤーと同じように振る舞う。インタラクト対象には `SendCustomEvent("_interact")`、ピックアップは所有権を取ってから
-  毎フレーム手の高さで動かす。他のプレイヤーが動かしている物には手を出さない。
-- 次の形式でログを書く（目印は既定で `[NSBOT]`）。
-
-```
-[NSBOT] t=<Time.time> p=<ローカルの playerId> ready ...
-[NSBOT] t=... p=... act <何をしたか>
-[NSBOT] t=... p=... carry start <何を>   /   carry end (<理由>)
-[NSBOT] t=... p=... state key=value key=value ...   （このクライアントから見た同期状態。変化したときと 10 秒ごと）
-[NSBOT] t=... p=... done                            （ボットが操作をやめた。state 行は書き続ける）
-```
-
-実機で得られた注意点:
-
-- プレイヤーが操作できる物だけを操作する。`activeInHierarchy`、コライダーが有効、`DisableInteractive` でない、を確認します。
-  確認しないと人には押せない物まで押してしまいます。ワールド側の連打防止（「2 秒以内のクリックは無視」など）にも掛かります。
-- ワールドの初期化が終わるまで待つ（`startDelay`、またはワールドの準備完了の目印）。`Utilities.IsValid(Networking.LocalPlayer)`
-  も確認します。早すぎる操作はビヘイビアを停止させることがあります。
-- transform を動かす持ち運びでは `OnPickup` / `OnDrop` / `OnPickupUseDown` は起きず、`VRC_Pickup.IsHeld` も false のままです。
-  これらに頼るワールドの処理は試せません。運ぶ間は Rigidbody を kinematic にし（終わったら元に戻す）、途中のトリガーは
-  発火します。`pickupable = false` の物は運ばないでください。
-- 所有権を失った、非表示になった、ワールドが位置を戻した（リセットなど）ときは運搬を終える。
-- 一つしかない物をボット同士が奪い合うと、ゲームが止まることがあります。直近数秒以内に他人が動かした物には手を出さず、
-  奪われたらしばらく諦めるようにします。
-- UdonSharp からは UI の `Button` を押せません。ボタンが呼ぶメソッドを直接呼びます。その場合 UI 自体は試せていません。
-
-`state` には、全クライアントで同じになるはずの値だけを入れてください（クライアントごとの回数などは入れない）。
-サンプルワールドの `SampleWorldBot.cs` をコピーして始めると簡単です。公開フィールドは、実行ごとに
-`config: "actionProbability=0.5;playSeconds=300"` のように上書きできます。
-
-### 実行
-
-```csharp
-Haselab.NetSim.RealClient.RealClientTest.BuildAndTest(botPrefab, 3, "playSeconds=180");
-```
-
-またはボットのプレハブを選択して *Tools > NetSim > Real Client Test > Build & Test with Selected Bot Prefab* を実行します。
-そのあと、パッケージの `Tools~` フォルダ（VCC で入れた場合は `Packages/net.haselab.netsim/Tools~`、git URL で入れた場合は
-`Library/PackageCache/` の下）で次を実行します。
-
-```
-python analyze_logs.py --since "2026-10-06 10:28" --watch --must-match good,synced,goals --out report.md
-python vrc_clients.py launch 1        # 任意: 途中参加者を追加
-python vrc_clients.py kill 1          # 任意: マスター（プレイヤー 1）を退出させる
-```
-
-注意:
-
-- SDK は、保存されている VRChat のパスからクライアントを起動します。パスが未設定のとき（新しい PC など）は、`BuildAndTest` が
-  Steam のライブラリから探して設定します。VRChat が入っていなければ、メッセージを出して止まります。
-- `python vrc_clients.py killall` は、自分で遊んでいるものも含めて VRChat をすべて終了します。テスト用のクライアントだけを
-  閉じるには `kill <player>` を使ってください。
-- 全クライアントが 1 台の PC で動くので、通信の遅延はほぼ 0 です。VRChat 本物の所有権・同期・タイミングは試せますが、
-  遅延や欠落の試験にはなりません。それには NetSim を使ってください。
-- 特定のクライアント（マスターなど）を退出させたいときは、1 クライアントでビルドし、残りを
-  `python vrc_clients.py launch 2`（6 秒間隔）で追加します。各クライアントが別々のログファイルを持つので、プレイヤー ID で終了させられます。
-- SDK はビルドの前に開いているシーンを保存します。`BuildAndTest` はファイルを退避して終わったあとに戻すので、
-  **開いているシーンの未保存の変更は失われます**。先に保存してください。
-- 同じ秒に起動したクライアントは同じログファイルに書きます。ツールはボットが書くプレイヤー ID ごとにまとめます。
-- 追加のクライアントのログに `SteamApi_Init returned false` や `VRCNP: Failed to create server` が出ますが、1 台の PC で
-  複数起動したことによるもので、ワールドの動作には関係ありません。
-- シーンはバージョン管理しておいてください。復元は退避したファイルのコピーなので、ビルド中のクラッシュで壊れたファイルは
-  git から戻すのが確実です。
-- コンソールに古いエラーが残って UdonSharp のコンパイルが止まったときは、コンソールをクリアしてから再コンパイルします
-  （`UdonSharpProgramAsset.CompileAllCsPrograms`）。
-- ビルドが途中で止まってシーンにボットが残った場合は、*Tools > NetSim > Real Client Test > Remove Bots From Scene* で
-  取り除いてください。それまではビルドガードがアップロードを止めます。
 
 ## 限界
 

@@ -3,7 +3,7 @@
   python analyze_logs.py --since "2026-10-06 10:28" [--must-match good,goals] [--out report.md]
   python analyze_logs.py --since "2026-10-06 10:28" --watch      # wait until every bot is done, then report
 
-Bot log lines (see Documentation~/README.md, "Testing in the real VRChat client"):
+Bot log lines (see README.md of the net.haselab.netsim.realclient package):
   [NSBOT] t=<seconds> p=<player id> ready ...
   [NSBOT] t=... p=... act <what>
   [NSBOT] t=... p=... carry start <what> | carry end (<reason>)

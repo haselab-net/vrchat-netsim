@@ -131,6 +131,7 @@ namespace Haselab.NetSim
             catch { UninstallHooks(); throw; }
             SceneManager.sceneLoaded -= OnSceneLoaded; SceneManager.sceneLoaded += OnSceneLoaded;
             var go = new GameObject("NetSimDriver"); driver = go.AddComponent<NetSimDriver>();
+            if (Application.isBatchMode) DisableClientSimInput();
             Active = true;
             Note($"started, master=p{MasterId}, cfg latency={Config.latencyMin}-{Config.latencyMax}s eventDrop={Config.eventDropRate} serDrop={Config.serializationDropRate}");
         }
@@ -143,6 +144,15 @@ namespace Haselab.NetSim
             UninstallHooks();
             if (driver) UnityEngine.Object.Destroy(driver.gameObject);
             Note("stopped");
+        }
+
+        // In -batchmode ClientSim has no input device and its player controller throws every frame (and would fill the
+        // reports with errors). Nobody moves the local player there anyway.
+        static void DisableClientSimInput()
+        {
+            var t = Type.GetType("VRC.SDK3.ClientSim.ClientSimPlayerController, VRC.ClientSim");
+            if (t == null) return;
+            foreach (var o in UnityEngine.Object.FindObjectsOfType(t)) if (o is Behaviour b) b.enabled = false;
         }
 
         // Adds a remote client: spawns a ClientSim remote player and loads a copy of the scene.

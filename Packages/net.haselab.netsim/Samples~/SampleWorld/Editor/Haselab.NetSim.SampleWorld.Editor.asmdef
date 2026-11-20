@@ -4,8 +4,7 @@
     "references": [
         "Haselab.NetSim.Editor",
         "VRC.SDKBase",
-        "VRC.Udon",
-        "Haselab.NetSim.RealClient.Editor"
+        "VRC.Udon"
     ],
     "includePlatforms": [
         "Editor"

@@ -1,9 +1,9 @@
 {
   "name": "net.haselab.netsim",
-  "displayName": "NetSim - Multi-client Network Simulator for VRChat Worlds",
-  "version": "0.2.0",
+  "displayName": "NetSim - Multi-client Sync Test for VRChat Worlds",
+  "version": "0.3.0",
   "unity": "2022.3",
-  "description": "Editor-only simulator that runs multiple ClientSim clients in Unity Editor and routes Udon networking (network events, synced variables, ownership, late join, master leave, object sync) through a simulated server with latency, jitter and loss.",
+  "description": "Editor-only sync test: runs several VRChat clients as copies of your world scene in one Unity Editor (ClientSim) and routes Udon networking (network events, synced variables, ownership, late join, master leave, object sync) through a simulated server with latency, jitter and loss. Use it from the NetSim window (Tools > NetSim), from C# scenarios or from the command line.",
   "author": {
     "name": "haselab-net",
     "url": "https://github.com/haselab-net"
@@ -31,9 +31,9 @@
       "path": "Samples~/SampleWorld"
     },
     {
-      "displayName": "Example Scenarios",
-      "description": "Example scenarios and test bots for NetSim.",
-      "path": "Samples~/ExampleScenarios"
+      "displayName": "Scenario Template",
+      "description": "A starting point for a scenario that knows your world.",
+      "path": "Samples~/ScenarioTemplate"
     }
   ]
 }

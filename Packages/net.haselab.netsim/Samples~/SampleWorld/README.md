@@ -15,33 +15,20 @@ A small world with correct sync patterns, planted sync bugs and a scenario that 
 
 ## Run
 
-1. Open `SampleWorld.unity` and enter Play Mode (ClientSim).
-2. Run the scenario (from a small Editor script or an "execute C#" tool):
+1. Open `SampleWorld.unity`.
+2. *Tools > NetSim > NetSim Window* > **Scenarios** > `sample-world` > **Run now**
+   (from code: `Haselab.NetSim.NetSimScenarioRunner.RunInPlayMode("sample-world");`).
+3. The report (**Reports** tab, `Logs/NetSim/sample-world_*.md`) ends with a `## Verdict` checklist and **PASS** when
+   every expectation in the table above was met.
 
-```csharp
-Haselab.NetSim.NetSimScenarioRunner.RunWhenReady("sample-world");
-```
+The built-in scenarios (`random-play`, `late-join`, ...) also run on this world; they report the planted bugs as FAIL.
 
-3. Read `Logs/NetSim/sample-world_*.md`. It ends with a `## Verdict` checklist and **PASS** when every expectation
-   in the table above was met.
-
-The example scenarios (`example-consistency`, `example-latejoin`, `example-masterleave`) from the
-**Example Scenarios** sample also run on this world.
+To see the bugs by hand: **Manual test** > *Start NetSim* > *+ Client* twice, select `RacyCounter` in the Hierarchy and
+press *Interact* for C1 and C2 right after each other, or *Interact* on `LostWriteCounter` as C1, then *Compare now*.
 
 The scenario expects no message loss (the default configuration). With `eventDropRate > 0` the event-only toggle
 also differs between early clients, and lost requests make the good counter count fewer clicks, which is the
 intended behaviour of those patterns under loss.
 
-## Real VRChat client test
-
-`SampleWorldBot.prefab` is a bot for the same world in the real VRChat client (see the manual, "Testing in the real
-VRChat client"). Each client's bot clicks random stations and carries the ball for 2 minutes, then stops and keeps
-logging `state good=.. racy=.. lost=.. synced=.. eventLamp=.. goals=..`.
-
-1. Start Steam, log in to the VRChat SDK (VRChat SDK > Show Control Panel) and save `SampleWorld.unity`.
-2. *Tools > NetSim > Sample World > Build & Test with Bot (3 clients)*.
-3. Optionally, about a minute later, add a late joiner: `python vrc_clients.py launch 1` (in the package's `Tools~`).
-4. `python analyze_logs.py --since "<start time>" --watch --must-match good,synced,goals`
-
-`good`, `synced` and `goals` must be equal on every client (PASS). `racy` and `lost` may differ, and `eventLamp` differs
-for a late joiner: those are the planted bugs, now observed in real VRChat networking.
+To run the same world in real VRChat clients, see the **Sample World Bot** sample of the optional
+NetSim Real Client Test package.

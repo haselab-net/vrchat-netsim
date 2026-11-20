@@ -8,7 +8,7 @@
 // build while a bot is in the scene, so a bot can never end up in an upload.
 //
 // The bot is an ordinary Udon / UdonSharp behaviour that every client runs as its local player and that writes its
-// actions and the world state to the VRChat log (see Documentation~/README.md, "Testing in the real VRChat client").
+// actions and the world state to the VRChat log (see this package's README.md).
 #if UNITY_EDITOR
 using System;
 using System.Collections;

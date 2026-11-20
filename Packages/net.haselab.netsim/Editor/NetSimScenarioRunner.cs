@@ -13,8 +13,12 @@
 //   }
 //
 // Run one scenario (play mode):  NetSimScenarioRunner.RunWhenReady("my-check", new NetSimConfig { latencyMin = 0.1f, latencyMax = 0.3f });
+//                                (cfg = null uses the settings of the NetSim window, ProjectSettings/NetSimSettings.json)
+// Run one from edit mode too:    NetSimScenarioRunner.RunInPlayMode("my-check");   (enters play mode, stays there afterwards)
 // Run many unattended:           NetSimSuite.Start(new[] { "my-check|label|0.1|0.3|0|0|0|1|4", ... });
-// Reports: Logs/NetSim/<scenario>_<label>_<time>.md
+// From the command line:         see NetSimCli
+// GUI:                           Tools > NetSim > NetSim Window
+// Reports: Logs/NetSim/<scenario>_<label>_<time>.md  (ctx.Check(...) results end up in "## Verdict": PASS / FAIL)
 #if UNITY_EDITOR
 using System;
 using System.Collections;
@@ -33,13 +37,20 @@ namespace Haselab.NetSim
     public class NetSimScenarioAttribute : Attribute
     {
         public readonly string Name;
+        /// <summary>One line shown in the NetSim window.</summary>
+        public string Description { get; set; }
         public NetSimScenarioAttribute(string name) { Name = name; }
     }
 
     public static class NetSimScenarioRunner
     {
         public static string LastReportPath;
+        /// <summary>"PASS", "FAIL", "ERROR" or "" (the scenario made no checks) of the last finished scenario.</summary>
+        public static string LastVerdict = "";
         public static bool Running;
+        /// <summary>The scenario that is running (null when none).</summary>
+        public static NetSimScenarioContext Current { get; private set; }
+        const string KeyPendingRun = "Haselab.NetSim.PendingRun";
         /// <summary>Called every frame before a scenario starts; return true when the world has finished initializing.</summary>
         public static Func<bool> WorldReady = DefaultWorldReady;
         /// <summary>Log lines starting with these strings are counted and listed in the report (e.g. "GameStarted").</summary>
@@ -47,9 +58,15 @@ namespace Haselab.NetSim
 
         public static IEnumerable<string> ScenarioNames => Scenarios().Keys;
 
+        /// <summary>Description given in [NetSimScenario(..., Description = "...")] ("" when none).</summary>
+        public static string DescriptionOf(string scenario)
+            => Scenarios().TryGetValue(scenario, out var m) ? m.GetCustomAttribute<NetSimScenarioAttribute>().Description ?? "" : "";
+
+        static Dictionary<string, MethodInfo> cache;
         static Dictionary<string, MethodInfo> Scenarios()
         {
-            var d = new Dictionary<string, MethodInfo>();
+            if (cache != null) return cache;   // rebuilt after every domain reload (script change)
+            var d = cache = new Dictionary<string, MethodInfo>();
             foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
             {
                 Type[] types; try { types = a.GetTypes(); } catch { continue; }
@@ -63,7 +80,7 @@ namespace Haselab.NetSim
             return d;
         }
 
-        static bool DefaultWorldReady()
+        public static bool DefaultWorldReady()
         {
             // every UdonBehaviour in the open scene has run Start (or 10 s have passed)
             if (Time.time > 10f) return true;
@@ -73,9 +90,47 @@ namespace Haselab.NetSim
             return Time.time > 2f;
         }
 
-        /// <summary>Call in play mode: waits until the world is ready, then runs the scenario.</summary>
-        public static void RunWhenReady(string scenario, NetSimConfig cfg = null, float timeScale = 4f, string label = "")
+        /// <summary>
+        /// Runs a scenario in play mode and leaves play mode running afterwards (so the clients can be inspected).
+        /// From edit mode it enters play mode first. `step` is a scenario name or a suite step string (see NetSimSuite).
+        /// </summary>
+        public static void RunInPlayMode(string step)
         {
+            if (EditorApplication.isPlaying) { StartStep(step); return; }
+            SessionState.SetString(KeyPendingRun, step);
+            EditorApplication.isPlaying = true;
+        }
+
+        // the pending run survives the domain reload of entering play mode
+        [InitializeOnLoadMethod]
+        static void RegisterPendingRun()
+        {
+            EditorApplication.playModeStateChanged += s => {
+                if (s == PlayModeStateChange.EnteredPlayMode)
+                {
+                    var step = SessionState.GetString(KeyPendingRun, "");
+                    SessionState.EraseString(KeyPendingRun);
+                    if (!string.IsNullOrEmpty(step)) StartStep(step);
+                }
+                if (s == PlayModeStateChange.ExitingPlayMode && Running)
+                {
+                    // play mode was stopped in the middle of a scenario: its coroutine is gone
+                    Debug.LogWarning("[NetSim] play mode stopped while scenario " + Current?.Name + " was running; no report written");
+                    Running = false; Current = null; LastVerdict = "ERROR"; LastReportPath = null; Time.timeScale = 1f;
+                }
+            };
+        }
+
+        static void StartStep(string step)
+        {
+            NetSimSuite.ParseStep(step, out var scenario, out var label, out var cfg, out var timeScale);
+            RunWhenReady(scenario, cfg, timeScale, label);
+        }
+
+        /// <summary>Call in play mode: waits until the world is ready, then runs the scenario.</summary>
+        public static void RunWhenReady(string scenario, NetSimConfig cfg = null, float timeScale = -1f, string label = "")
+        {
+            if (!Scenarios().ContainsKey(scenario)) throw new ArgumentException("unknown scenario: " + scenario + " (known: " + string.Join(", ", ScenarioNames) + ")");
             EditorApplication.CallbackFunction wait = null;
             wait = () => {
                 if (!EditorApplication.isPlaying) { EditorApplication.update -= wait; return; }
@@ -86,23 +141,31 @@ namespace Haselab.NetSim
             EditorApplication.update += wait;
         }
 
-        public static void Run(string scenario, NetSimConfig cfg = null, float timeScale = 4f, string label = "")
+        /// <summary>
+        /// Runs a scenario now (play mode, world ready). cfg = null uses the window's settings (NetSimSettings);
+        /// timeScale &lt; 0 uses the settings' time scale.
+        /// </summary>
+        public static void Run(string scenario, NetSimConfig cfg = null, float timeScale = -1f, string label = "")
         {
             if (Running) { Debug.LogWarning("[NetSim] a scenario is already running"); return; }
             if (!Scenarios().TryGetValue(scenario, out var method)) throw new ArgumentException("unknown scenario: " + scenario + " (known: " + string.Join(", ", ScenarioNames) + ")");
-            Running = true;
-            var ctx = new NetSimScenarioContext(scenario + (string.IsNullOrEmpty(label) ? "" : "_" + label));
-            Time.timeScale = timeScale;
-            try { NetSim.Start(cfg ?? new NetSimConfig()); }
-            catch { Running = false; Time.timeScale = 1f; throw; }
+            if (NetSim.Active) NetSimSession.Stop();   // a manual session from the window
+            Running = true; LastVerdict = ""; LastReportPath = null;
+            var ctx = Current = new NetSimScenarioContext(scenario + (string.IsNullOrEmpty(label) ? "" : "_" + label));
+            Time.timeScale = timeScale >= 0 ? timeScale : NetSimSettings.Instance.timeScale;
+            try { NetSim.Start(cfg ?? NetSimSettings.Instance.CloneConfig()); }
+            catch { Running = false; Current = null; Time.timeScale = 1f; throw; }
+            NetSimView.Show(0);
             var body = (IEnumerator)method.Invoke(null, new object[] { ctx });
             var driver = UnityEngine.Object.FindObjectOfType<NetSimDriver>();
             driver.StartCoroutine(ctx.Wrap(body, () => {
                 LastReportPath = ctx.ReportPath;
+                LastVerdict = ctx.Verdict;
                 Time.timeScale = 1f;
+                NetSimView.Reset();
                 NetSim.Stop();
-                Running = false;
-                Debug.Log("[NetSim] SCENARIO DONE " + ctx.Name);
+                Running = false; Current = null;
+                Debug.Log("[NetSim] SCENARIO DONE " + ctx.Name + (ctx.Verdict != "" ? " " + ctx.Verdict : ""));
             }));
         }
     }
@@ -113,6 +176,10 @@ namespace Haselab.NetSim
         public readonly string Name;
         public string ReportPath { get; private set; }
         public bool Stalled { get; private set; }
+        /// <summary>"PASS" (every Check passed), "FAIL", "ERROR" (the scenario threw) or "" (no checks).</summary>
+        public string Verdict { get; private set; } = "";
+        /// <summary>Short description of what the scenario is doing now (shown in the NetSim window).</summary>
+        public string Status = "";
         /// <summary>Simulated seconds without any change of the progress signature before a stall is reported.</summary>
         public float StallSeconds = 240f;
         /// <summary>Returns a string that changes whenever the game makes progress (used for stall detection).</summary>
@@ -120,6 +187,11 @@ namespace Haselab.NetSim
 
         readonly StringBuilder report = new StringBuilder();
         readonly Dictionary<string, int> logCounts = new Dictionary<string, int>();
+        readonly List<(string name, bool ok)> checks = new List<(string, bool)>();
+        bool threw;
+
+        /// <summary>Records an expectation; all of them are listed under "## Verdict" (PASS when all are true).</summary>
+        public bool Check(string name, bool ok) { checks.Add((name, ok)); return ok; }
 
         public NetSimScenarioContext(string name) { Name = name; ProgressSignature = DefaultProgressSignature; }
 
@@ -141,9 +213,17 @@ namespace Haselab.NetSim
             {
                 bool moved;
                 try { moved = body.MoveNext(); }
-                catch (Exception e) { R($"- SCENARIO EXCEPTION: {e}"); break; }
+                catch (Exception e) { R($"- SCENARIO EXCEPTION: {e}"); threw = true; break; }
                 if (!moved) break;
                 yield return body.Current;
+            }
+            if (checks.Count > 0 || threw)
+            {
+                Verdict = threw ? "ERROR" : checks.All(x => x.ok) ? "PASS" : "FAIL";
+                R("");
+                R("## Verdict");
+                foreach (var (name, ok) in checks) R($"- [{(ok ? "x" : " ")}] {name}");
+                R($"- **{Verdict}**");
             }
             R("");
             R("## Totals");
@@ -195,6 +275,7 @@ namespace Haselab.NetSim
         {
             for (int i = 0; i < n; i++)
             {
+                Status = $"adding client {i + 1}/{n}";
                 var c = NetSim.AddClient(prefix + (NetSim.Clients.Count), lateJoin);
                 yield return WaitReady(c);
             }
@@ -205,7 +286,7 @@ namespace Haselab.NetSim
         public IEnumerator Settle(float seconds = 3f)
         {
             float until = Time.time + seconds;
-            while (Time.time < until) yield return null;
+            while (Time.time < until) { Status = $"settling ({until - Time.time:F0} s left)"; yield return null; }
         }
 
         /// <summary>
@@ -233,6 +314,7 @@ namespace Haselab.NetSim
                     bot?.Invoke(c, r);
                 }
                 perTick?.Invoke();
+                Status = $"playing ({until - Time.time:F0} s left)";
                 if (Time.time > nextStatus) { nextStatus = Time.time + 60; Debug.Log($"[NetSim] status t={Time.time:F0} pending={NetSim.PendingMessages}"); }
                 float wait = Time.time + 1f; while (Time.time < wait && !stop()) yield return null;
             }

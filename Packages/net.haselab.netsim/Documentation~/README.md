@@ -3,11 +3,76 @@
 English | [日本語](README.ja.md)
 
 NetSim runs several VRChat clients inside one Unity Editor play session (ClientSim) and routes Udon networking
-between them through a simulated server with latency, jitter and loss. Scenarios (C# coroutines) add clients,
-drive the world with bots and report differences between clients.
+between them through a simulated server with latency, jitter and loss. You can drive the clients by hand from the
+NetSim window, or let scenarios (built in, or C# coroutines you write) add clients, play the world with bots and
+report differences between clients, from the window, from code or from the command line.
 
 It is a debugging aid, not a faithful reimplementation of VRChat networking: confirm important results with a
-multi-client test in the real VRChat client ("Build & Test" with several clients).
+multi-client test in the real VRChat client ("Build & Test" with several clients; the optional
+[NetSim Real Client Test](../../net.haselab.netsim.realclient/README.md) package automates that with a bot).
+
+## Quick start
+
+1. Install the package (see the repository README) and open your world scene.
+2. Open **Tools > NetSim > NetSim Window**.
+3. Pick the network conditions (a preset such as *Typical* or *Bad Wi-Fi*, or your own values).
+4. Either test by hand (**Manual test** tab) or let a scenario play (**Scenarios** tab). Results are listed in the
+   **Reports** tab and written to `Logs/NetSim/`.
+
+No code is needed for either. To try it on a world with known sync bugs, import the **Sample World** sample, open
+`SampleWorld.unity` and run the `sample-world` scenario.
+
+## The NetSim window
+
+### Network conditions
+
+Latency (one way, per hop), loss rates, seed and the other `NetSimConfig` fields ([below](#network-conditions-latency-jitter-loss)).
+They are saved to `ProjectSettings/NetSimSettings.json` and used by every manual session and every scenario that is
+started without its own configuration (also from code and the command line), so a team can commit them. During a
+manual session, changes apply immediately (except the seed).
+
+### Manual test
+
+1. Enter play mode (the button does it). You are **C0**, the ClientSim player, and play in the Game view as usual.
+2. **Start NetSim**, then **+ Client** for every other player. Each client is a copy of the scene; the copies appear in
+   the Hierarchy as separate scenes labelled `C1 Remote1`, `C2 Remote2`, … (`★` = master).
+3. **View** chooses whose copy the Game view shows (*View all* draws all copies on top of each other). Mouse and
+   keyboard input in the Game view always act as C0.
+4. Select an object in the Hierarchy (in any copy). **Selected object** shows its owner and synced variables in every
+   client, values that differ from the master in red, and lets each client **Interact** with it, take ownership
+   (**Own**) or run a custom event. Pressing *Interact* for two clients right after each other is the quickest way
+   to reproduce "two players clicked at once".
+5. **Interact as another client** lists everything a client can interact with right now.
+6. **Compare now** lists the synced variables that differ between the master and the others (*every 2 s* keeps it
+   updated). **Write snapshot report** saves the differences, visible differences, network statistics and the NetSim
+   log to `Logs/NetSim/snapshot_*.md`.
+7. **Leave** makes a client leave; leaving the master tests master migration. **+ Late joiner** joins a client later.
+
+### Scenarios
+
+Choose a scenario and press **Run now** (enters play mode if needed and stays there, so you can look at the clients
+afterwards), or **Add to batch** to collect several runs, for example *+ this scenario × every preset*, and
+**Run batch** to run them unattended, each in a fresh play session. **Copy command line for this batch** gives the
+equivalent command line (see [Command line](#command-line)).
+
+Built-in scenarios (no code; they work on any world):
+
+| Scenario | What happens | PASS when |
+|---|---|---|
+| `join-check` | Clients join; nobody plays | all clients have the same synced variables |
+| `random-play` | Every client presses random buttons / interactables for *Play time* | all clients agree afterwards |
+| `late-join` | Clients play, then one more joins | everybody agrees and the late joiner sees the same objects |
+| `master-leave` | The master leaves in the middle of play | the remaining clients agree and keep working |
+
+*Clients* (in total, including C0), *Play time* and *Bot activity* apply to the built-in scenarios. They only press
+what a player could press, but they know nothing about your game; a scenario written for your world
+([Writing scenarios](#writing-scenarios)) reaches far more states.
+
+### Reports
+
+Every scenario writes `Logs/NetSim/<scenario>[_<label>]_<time>.md` ending in `## Verdict` with **PASS** / **FAIL**
+(see [Reading a report](#reading-a-report)). The **Reports** tab lists them, newest first, and shows them inside the
+editor.
 
 ## How it works
 
@@ -47,7 +112,8 @@ networking is a simplified model, so confirm important results with several real
 
 ### Network conditions (latency, jitter, loss)
 
-The simulated network is configured with `NetSimConfig`, passed when a scenario starts:
+The simulated network is configured in the NetSim window (saved to `ProjectSettings/NetSimSettings.json`), or with a
+`NetSimConfig` passed when a scenario starts:
 
 ```csharp
 Haselab.NetSim.NetSimScenarioRunner.RunWhenReady("sample-world", new Haselab.NetSim.NetSimConfig {
@@ -117,14 +183,17 @@ static class MyWorldScenarios
 }
 ```
 
-The assembly that contains the scenarios must be Editor-only and reference `Haselab.NetSim.Editor`
-(see `Samples~/ExampleScenarios/Haselab.NetSim.Samples.Editor.asmdef`).
+Put the file in any `Editor` folder (NetSim's assembly is referenced automatically), or in an Editor-only assembly
+definition that references `Haselab.NetSim.Editor`. The **Scenario Template** sample is a starting point. A scenario
+appears in the NetSim window as soon as the scripts compile; `[NetSimScenario("doors", Description = "...")]` adds a
+line of explanation there.
 
 Useful members:
 
 | Member | Purpose |
 |---|---|
 | `ctx.AddClients(n, prefix, lateJoin)` | Add remote clients and wait until their behaviours have started |
+| `ctx.Check(name, ok)` | Record an expectation; all of them are listed under `## Verdict` (PASS only when all hold) |
 | `NetSim.AddClient(name, lateJoin)` / `NetSim.RemoveClient(c)` | Join / leave (leave the master to test master migration) |
 | `NetSim.MasterId = c.player.playerId` | Make a remote client the instance creator before the game starts, so it can leave later |
 | `ctx.PlayUntil(stop, timeout, bot)` | Call `bot(client, rng)` for every client once per simulated second; stops on stall (`ctx.ProgressSignature`, `ctx.StallSeconds`) |
@@ -146,14 +215,17 @@ Hierarchy paths that occur more than once get a `~n` suffix (`Root/Item~1`, `Roo
 A bot is a function called once per simulated second per client. Because the clients act independently,
 simultaneous button presses and fights over the same object happen naturally. Write bots the way a player acts:
 only interact with objects that are active and have an enabled collider, press only visible, interactable buttons,
-and carry only pickupable objects. The sample `MonkeyBot` does this without any knowledge of the world;
+and carry only pickupable objects. The built-in `NetSimBots.Random` does this without any knowledge of the world;
 a bot that knows the game's goal finds far more problems.
 
-## Running
+## Running scenarios
 
-Play mode, one scenario:
+From the NetSim window: see [Scenarios](#scenarios). From code:
 
 ```csharp
+// play mode or edit mode: enters play mode if needed and stays there afterwards
+Haselab.NetSim.NetSimScenarioRunner.RunInPlayMode("doors");
+// play mode, with explicit conditions (null = the window's settings, timeScale < 0 = the window's speed)
 Haselab.NetSim.NetSimScenarioRunner.RunWhenReady("doors",
     new Haselab.NetSim.NetSimConfig { latencyMin = 0.1f, latencyMax = 0.4f, eventDropRate = 0.02f }, timeScale: 4);
 ```
@@ -165,12 +237,33 @@ Haselab.NetSim.NetSimSuite.Start(new[] {
     // scenario|label|latMin|latMax|eventDrop|serializationDrop|objectSyncDrop|seed|timeScale[|trace[|teleport]]
     "doors|fast|0.03|0.08|0|0|0|1|4",
     "doors|slow-lossy|0.2|0.6|0.05|0.05|0.05|2|4",
+    "doors",                                   // fields left out come from the window's settings
 });
 ```
 
-- Reports: `Logs/NetSim/<scenario>_<label>_<time>.md`; suite progress: `Logs/NetSim/suite.log`.
+- Reports: `Logs/NetSim/<scenario>_<label>_<time>.md`; suite progress and one line per finished step with its verdict:
+  `Logs/NetSim/suite.log`. `NetSimSuite.Results` / `NetSimSuite.Finished` give the results to code.
 - A `swap:<dir>` step copies every file under `<dir>` (laid out like the project) into the project and recompiles,
   which makes it possible to run the same scenarios against two versions of the world scripts in one suite.
+
+### Command line
+
+For scripts, CI and AI agents. The project must not be open in another Unity Editor; do not pass `-quit`.
+
+```
+Unity.exe -batchmode -projectPath <project> -executeMethod Haselab.NetSim.NetSimCli.Run
+          -netsimScene Assets/MyWorld.unity
+          -netsimRun random-play -netsimRun "late-join|slow|0.2|0.6|0.05|0.05|0.05|2|4"
+          -logFile <project>/Logs/NetSim/cli-editor.log
+```
+
+- `-netsimRun` takes a scenario name or a suite step (above) and can be repeated. Without it, the batch list saved in
+  the NetSim window runs. Anything a step leaves out comes from `ProjectSettings/NetSimSettings.json`.
+- `-netsimList` writes the known scenarios to `Logs/NetSim/scenarios.txt` and quits.
+- Exit code: **0** every scenario passed (or made no checks), **2** a check failed, **1** error (unknown scenario,
+  compile error, exception, a scenario that never started). `Logs/NetSim/cli-result.txt` has one
+  `<verdict>\t<step>\t<report>` line per step.
+- Without `-batchmode` the same command opens the editor window, runs and quits.
 
 ### Reading a report
 
@@ -190,97 +283,6 @@ The common "take ownership, then write" pattern (`Networking.SetOwner`, then cha
 ownership and write, and only one write survives; the other player keeps showing its own value until the next change.
 NetSim reports this as **synced vars ... differences**. Avoid it by letting non-owners ask the owner with a network event
 and having only the owner write. Compare `RacyCounter` and `GoodCounter` in the sample world.
-
-## Testing in the real VRChat client
-
-NetSim is fast but simplified. For the final check, run the same kind of test in the real VRChat client: the VRChat SDK
-"Build & Test" starts several clients on this PC, and a **bot** inside the world plays on every client and writes what
-it does and sees to the VRChat log. A script then compares the clients' logs.
-
-| Part | Role |
-|---|---|
-| Your bot (Udon / UdonSharp prefab) | Runs on every client as the local player; acts, then writes `state` lines with the synced world state |
-| `RealClientTest.BuildAndTest(botPrefab, clients, config)` | Adds the bot to the open scene, runs Build & Test with N clients (Force Non-VR), restores the scene afterwards |
-| `RealClientBuildGuard` | Refuses any other build (upload) while a bot is in the scene |
-| `Tools~/analyze_logs.py` | Reads the client logs, lists each client's last state and every key that differs; `--must-match` gives a verdict |
-| `Tools~/vrc_clients.py` | Lists the running clients, launches more into the same instance (late join), kills one (e.g. the master) |
-
-Requirements: Windows, Steam running, VRChat installed and started at least once, and the VRChat SDK logged in
-(VRChat SDK > Show Control Panel). A run takes real time (the sample bot plays for 2 minutes).
-
-### Writing a bot
-
-A bot is an ordinary UdonSharp behaviour on a prefab (`[UdonBehaviourSyncMode(None)]`). Every client runs its own copy
-as `Networking.LocalPlayer`. It should:
-
-- find the world's objects at runtime (`GameObject.Find`, `transform.Find`): the prefab cannot reference scene objects;
-- act like a player: `SendCustomEvent("_interact")` on interactables, take ownership before moving a pickup and move it
-  at hand height every frame, and leave objects another player is moving alone;
-- write log lines in this format (prefix `[NSBOT]` by default):
-
-```
-[NSBOT] t=<Time.time> p=<local playerId> ready ...
-[NSBOT] t=... p=... act <what>
-[NSBOT] t=... p=... carry start <what>   /   carry end (<reason>)
-[NSBOT] t=... p=... state key=value key=value ...   (synced world state as this client sees it; on change and every 10 s)
-[NSBOT] t=... p=... done                            (the bot stopped acting; keep writing state lines)
-```
-
-Lessons from real runs:
-
-- Interact only with what a player could: `activeInHierarchy`, an enabled collider and not `DisableInteractive`.
-  Otherwise the bot presses things players cannot, and world-side guards (e.g. "ignore clicks within 2 s") still apply.
-- Wait until the world has initialized (`startDelay`, or a "ready" flag of the world) and check
-  `Utilities.IsValid(Networking.LocalPlayer)`; acting earlier can halt behaviours.
-- Carrying by setting the transform does not raise `OnPickup` / `OnDrop` / `OnPickupUseDown`, and
-  `VRC_Pickup.IsHeld` stays false; world logic that relies on them is not exercised. Set the Rigidbody kinematic while
-  carrying (restore it afterwards); triggers on the way still fire. Do not carry objects with `pickupable = false`.
-- End a carry when ownership is lost, the object is hidden, or the world moved it (e.g. a reset).
-- Bots fighting over a single object can stop the game: leave objects someone else moved in the last few seconds alone,
-  and back off for a while after losing one.
-- UdonSharp cannot click a UI `Button`; call the method the button would call. The UI itself is then not tested.
-
-Only put values into `state` that should be equal on every client (no per-client counters). Copy the sample world's
-`SampleWorldBot.cs` as a starting point. Public fields can be overridden per run with
-`config: "actionProbability=0.5;playSeconds=300"`.
-
-### Running
-
-```csharp
-Haselab.NetSim.RealClient.RealClientTest.BuildAndTest(botPrefab, 3, "playSeconds=180");
-```
-
-or select the bot prefab and use *Tools > NetSim > Real Client Test > Build & Test with Selected Bot Prefab*.
-Then, from the package's `Tools~` folder (`Packages/net.haselab.netsim/Tools~` for a VCC install, under
-`Library/PackageCache/` for a git URL install):
-
-```
-python analyze_logs.py --since "2026-10-06 10:28" --watch --must-match good,synced,goals --out report.md
-python vrc_clients.py launch 1        # optional: a late joiner
-python vrc_clients.py kill 1          # optional: the master (player 1) leaves
-```
-
-Notes:
-
-- The SDK starts the clients from its saved VRChat path. If that is not set (e.g. on a new PC), `BuildAndTest` fills it in
-  from the Steam libraries, or stops with a message when VRChat is not installed.
-- `python vrc_clients.py killall` closes every VRChat process, including one you are playing in; use `kill <player>` to
-  close only test clients.
-- All clients run on one PC, so network latency is almost zero: this tests real ownership, sync and timing of VRChat,
-  but not latency or loss. Use NetSim for those.
-- To make one particular client leave (e.g. the master), build with 1 client and add the others with
-  `python vrc_clients.py launch 2` (6 s apart), so that every client has its own log file and can be killed by player id.
-- The SDK saves the open scene before building. `BuildAndTest` backs the file up and restores it afterwards, so
-  **unsaved changes in the open scene are lost**. Save first.
-- Clients started in the same second write to the same log file; the tools group lines by the player id the bot writes.
-- Extra clients log `SteamApi_Init returned false` or `VRCNP: Failed to create server`; these come from running several
-  clients on one PC and do not affect the world.
-- Keep the scene under version control: the restore copies a backup file, and a file broken by a crash during the build
-  is easiest to recover from git.
-- If UdonSharp stops compiling because of an old error in the Console, clear the Console and recompile
-  (`UdonSharpProgramAsset.CompileAllCsPrograms`).
-- If something interrupted a build and a bot was left in the scene, remove it with
-  *Tools > NetSim > Real Client Test > Remove Bots From Scene*; the build guard blocks uploads until then.
 
 ## Limitations
 
