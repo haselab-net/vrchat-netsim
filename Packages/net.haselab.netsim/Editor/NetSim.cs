@@ -108,6 +108,7 @@ namespace Haselab.NetSim
         public static void Start(NetSimConfig cfg, int masterClientIndex = 0)
         {
             if (Active) Stop();
+            RemoveCopies();   // copies left from the previous session (kept after a scenario for inspection)
             Config = cfg ?? new NetSimConfig();
             rng = new System.Random(Config.seed);
             TraceSubstrings.Clear(); if (!string.IsNullOrEmpty(Config.trace)) TraceSubstrings.AddRange(Config.trace.Split(','));
@@ -153,6 +154,22 @@ namespace Haselab.NetSim
             var t = Type.GetType("VRC.SDK3.ClientSim.ClientSimPlayerController, VRC.ClientSim");
             if (t == null) return;
             foreach (var o in UnityEngine.Object.FindObjectsOfType(t)) if (o is Behaviour b) b.enabled = false;
+        }
+
+        /// <summary>
+        /// Unloads the scene copies of the last session and removes their ClientSim players (call when NetSim is stopped;
+        /// Start does it too). A scenario leaves its copies loaded so they can be inspected afterwards.
+        /// </summary>
+        public static void RemoveCopies()
+        {
+            if (Active) throw new InvalidOperationException("stop NetSim first");
+            foreach (var c in Clients.Where(x => !x.isOriginal).ToList())
+            {
+                if (c.joined && c.player != null) { try { RemoveRemotePlayer(c.player); } catch (Exception e) { Debug.LogWarning("[NetSim] could not remove " + c + ": " + (e.InnerException ?? e).Message); } }
+                c.joined = false;
+                if (c.scene.IsValid() && c.scene.isLoaded) SceneManager.UnloadSceneAsync(c.scene);
+                Clients.Remove(c);
+            }
         }
 
         // Adds a remote client: spawns a ClientSim remote player and loads a copy of the scene.

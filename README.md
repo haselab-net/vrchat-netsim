@@ -9,7 +9,7 @@ uploading the world or starting more Editors or VRChat clients.
 
 Use it from the **NetSim window** (no code), from C# scenarios, or from the command line (scripts, CI, AI agents).
 
-> Status: early preview (0.3.0). APIs may change.
+> Status: early preview (0.3.1). APIs may change.
 
 ## Features
 
@@ -28,6 +28,8 @@ Use it from the **NetSim window** (no code), from C# scenarios, or from the comm
 - Unattended batches that survive play-mode transitions and domain reloads; a command line with exit codes
 
 ## Quick start
+
+**[Tutorial with screenshots](docs/tutorial/README.md)** — a 20-minute walk through the window with the sample world.
 
 1. Install the package (below) and open your world scene.
 2. *Tools > NetSim > NetSim Window*.
@@ -83,7 +85,7 @@ NetSim lives in an Editor-only assembly and is never included in world builds.
 https://github.com/haselab-net/vrchat-netsim.git?path=Packages/net.haselab.netsim
 ```
 
-Append `#v0.3.0` (a release tag) to the URL to pin a version.
+Append `#v0.3.1` (a release tag) to the URL to pin a version.
 
 ## Optional: test in real VRChat clients
 

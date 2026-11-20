@@ -13,6 +13,8 @@ multi-client test in the real VRChat client ("Build & Test" with several clients
 
 ## Quick start
 
+A step-by-step [tutorial with screenshots](https://github.com/haselab-net/vrchat-netsim/blob/main/docs/tutorial/README.md) walks through everything below with the sample world.
+
 1. Install the package (see the repository README) and open your world scene.
 2. Open **Tools > NetSim > NetSim Window**.
 3. Pick the network conditions (a preset such as *Typical* or *Bad Wi-Fi*, or your own values).
@@ -47,11 +49,16 @@ manual session, changes apply immediately (except the seed).
    updated). **Write snapshot report** saves the differences, visible differences, network statistics and the NetSim
    log to `Logs/NetSim/snapshot_*.md`.
 7. **Leave** makes a client leave; leaving the master tests master migration. **+ Late joiner** joins a client later.
+8. **Stop NetSim** removes the copies and their players; only C0 remains.
+
+After **Accept** on ClientSim's notice, the Game view keeps the mouse for looking around: press **Esc** to release it
+before using the window.
 
 ### Scenarios
 
-Choose a scenario and press **Run now** (enters play mode if needed and stays there, so you can look at the clients
-afterwards), or **Add to batch** to collect several runs, for example *+ this scenario × every preset*, and
+Choose a scenario and press **Run now**. It always runs in a fresh play session (play mode is restarted if it is on, so
+earlier experiments do not change the result) and stays in play mode afterwards: the scenario's copies remain loaded,
+marked `(stopped)` in the Hierarchy, until NetSim starts again or *Remove the copies now* is pressed. Or press or **Add to batch** to collect several runs, for example *+ this scenario × every preset*, and
 **Run batch** to run them unattended, each in a fresh play session. **Copy command line for this batch** gives the
 equivalent command line (see [Command line](#command-line)).
 
@@ -223,8 +230,10 @@ a bot that knows the game's goal finds far more problems.
 From the NetSim window: see [Scenarios](#scenarios). From code:
 
 ```csharp
-// play mode or edit mode: enters play mode if needed and stays there afterwards
+// a fresh play session (play mode is entered, or restarted when it is on); stays in play mode afterwards
 Haselab.NetSim.NetSimScenarioRunner.RunInPlayMode("doors");
+// in the current play session, on the world as it is now
+Haselab.NetSim.NetSimScenarioRunner.RunInPlayMode("doors", freshPlaySession: false);
 // play mode, with explicit conditions (null = the window's settings, timeScale < 0 = the window's speed)
 Haselab.NetSim.NetSimScenarioRunner.RunWhenReady("doors",
     new Haselab.NetSim.NetSimConfig { latencyMin = 0.1f, latencyMax = 0.4f, eventDropRate = 0.02f }, timeScale: 4);

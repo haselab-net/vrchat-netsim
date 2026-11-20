@@ -196,7 +196,8 @@ namespace Haselab.NetSim
         static float startedAt = -1, watchSince = -1;
         static void WatchDone()
         {
-            if (!EditorApplication.isPlaying) { EditorApplication.update -= WatchDone; startedAt = watchSince = -1; return; }
+            // play mode ended, or the suite was cancelled (queue emptied): nothing to record
+            if (!EditorApplication.isPlaying || Peek() == null) { EditorApplication.update -= WatchDone; startedAt = watchSince = -1; return; }
             if (watchSince < 0) watchSince = Time.realtimeSinceStartup;
             if (startedAt < 0 && NetSimScenarioRunner.Running) startedAt = Time.realtimeSinceStartup;
             if (startedAt < 0 && Time.realtimeSinceStartup - watchSince > 180)

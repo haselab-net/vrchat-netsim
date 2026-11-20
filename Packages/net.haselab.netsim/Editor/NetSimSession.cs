@@ -62,6 +62,7 @@ namespace Haselab.NetSim
             if (!NetSim.Active) return;
             NetSimView.Reset();
             NetSim.Stop();
+            NetSim.RemoveCopies();   // back to one client: the copies and their players leave
             Manual = false;
         }
 

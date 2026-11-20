@@ -1,7 +1,7 @@
 {
   "name": "net.haselab.netsim",
   "displayName": "NetSim - Multi-client Sync Test for VRChat Worlds",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "unity": "2022.3",
   "description": "Editor-only sync test: runs several VRChat clients as copies of your world scene in one Unity Editor (ClientSim) and routes Udon networking (network events, synced variables, ownership, late join, master leave, object sync) through a simulated server with latency, jitter and loss. Use it from the NetSim window (Tools > NetSim), from C# scenarios or from the command line.",
   "author": {

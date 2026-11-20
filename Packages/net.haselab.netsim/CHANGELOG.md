@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.1] - 2026-11-21
+
+Fixes found while testing the NetSim window with real mouse input; a [tutorial with screenshots](https://github.com/haselab-net/vrchat-netsim/blob/main/docs/tutorial/README.md) (English / 日本語).
+
+- *Stop NetSim* now removes the scene copies and their ClientSim players. Before, they stayed loaded, kept running their
+  Udon, appeared to C0 as players still in the instance and were treated as C0 by the next session.
+- Copies left by a scenario (kept for inspection, labelled `(stopped)` in the Hierarchy) are removed when NetSim starts
+  again; *Remove the copies now* removes them at once.
+- *Run now* always runs in a fresh play session (restarts play mode when it is on), so the result does not depend on
+  earlier experiments in the same session. `RunInPlayMode(step, freshPlaySession: false)` keeps the old behaviour.
+- A second *Run now* / `RunInPlayMode` while a run is about to start is ignored (a double click used to cancel the
+  restart of play mode); *Stop* also cancels a pending run.
+- The window repaints when a batch or scenario ends (it kept showing "Batch running").
+- Cancelling a batch no longer logs a phantom step result in suite.log.
+
 ## [0.3.0] - 2026-11-21
 
 NetSim is now only the in-editor multi-client sync test, usable without code.
